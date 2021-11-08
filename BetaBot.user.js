@@ -6,6 +6,8 @@
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
 // @require      https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js
+// @downloadURL  https://github.com/Isotab/BetaBot/raw/main/BetaBot.user.js
+// @updateURL    https://github.com/Isotab/BetaBot/raw/main/BetaBot.user.js
 // @grant        none
 // ==/UserScript==
 
