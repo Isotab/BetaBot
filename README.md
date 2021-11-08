@@ -26,9 +26,12 @@ Now once you refresh the page you will have this active
 Once you have installed the userscript there will be a button added under the recent updates link to open the popup window. This window contains all controls/settings for this bot and will be the main way to interact with it. This is divided into multiple tabs and I will go through each of them below
 
 All guides will follow a left to right, then top to bottom ordering so
------------- | -------------
-Option 1 | Option 2 
-Option 3 | Option 4 
+```
+-----------------------
+| Option 1 | Option 2 |
+| Option 3 | Option 4 |
+-----------------------
+```
 
 
 
