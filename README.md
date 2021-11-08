@@ -18,7 +18,7 @@ The easiest way to use BetaBot is to install a browser Script Manager extension
  * [Tampermonkey](http://www.google.com/search?q=tampermonkey) - Chrome, Safari, Firefox, Opera
  * [Greasemonkey](http://www.google.com/search?q=greasemonkey) - Firefox, QuPZilla, ..
 
-And then [click here](https://github.com/Isotab/BetaBot/raw/master/BetaBot.user.js) to install BetaBot
+And then [click here](https://github.com/Isotab/BetaBot/raw/main/BetaBot.user.js) to install BetaBot
 
 Now once you refresh the page you will have this active
 
