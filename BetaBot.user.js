@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.0
+// @version      1.2.1
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -15,14 +15,15 @@
 /*
     TODO:
     * Add screen for crafting item sets
-    * Polish up list for gem spawning
+    * Polish up list for gem spawning (WIP)
     * Write mass wire based upon the pattern ${settings.alt_basename}${romanize(x)}
     * Add some in game information on what each setting does
     * Fix whatever is wrong with the gold tc split, it should work though :(
+    * Make TC retry if you try to do more than 100k at a time
     * 
 */
 
-(function($) {
+(async function($) {
 
     let vars = {
         username: $("#username").text().toLowerCase().trim(),
@@ -39,10 +40,6 @@
         lastAction: null,
         canSpawnGem: true,
     }
-
-    let hypeMessages = [
-        
-    ]
 
     let logs = []
 
@@ -439,7 +436,7 @@
             $("#chatMessage").html(string)
             $("#chatSendMessage").click()
         },
-        sendAltChannel(string) {
+        async sendAltChannel(string) {
             let old = $("#chatChannel :selected").val()
             let custom = $('#chatChannel #channel' + settings.get('setting.bot_channel_name')).val()
 
@@ -448,9 +445,8 @@
             $("#chatMessage").html(string)
             $("#chatSendMessage").click()
 
-            setTimeout(() => {
-                $("#chatChannel").val(old).change()
-            }, 500)
+            await sleep(500)
+            $("#chatChannel").val(old).change()
         }
     }
 
@@ -459,6 +455,7 @@
         maxMob: false,
         direction: false,
         tracker: [],
+
         start_move() {
             mob_control.moving = true
             vars.actionPending = true
@@ -467,38 +464,38 @@
             $(document).one('roa-ws:page:town_battlegrounds', mob_control.moveMob)
             click('#battleGrounds')
         },
-        moveMob(e, d) {
-            setTimeout(() => {
-                let index = d.e.findIndex((o) => o.s === 1)
-                let newMobI = 0
-                let mobsToMove = parseInt(settings.get('setting.mobs_to_move')) //d.room.area === 'A Farm' ? 11 : 1
 
-                if (mob_control.direction == 'up') {
-                    log('Mob Control', 'Moving Mob Up')
-                    if (index + mobsToMove === d.e.length) {
-                        log('Mob Control', 'Moving City Up')
-                        mob_control.moveCity()
-                        return
-                    }
-                    newMobI = index + mobsToMove
+        async moveMob(e, d) {
+            await sleep(settings.get('setting.delay'))
+            let index = d.e.findIndex((o) => o.s === 1)
+            let newMobI = 0
+            let mobsToMove = parseInt(settings.get('setting.mobs_to_move')) //d.room.area === 'A Farm' ? 11 : 1
+
+            if (mob_control.direction == 'up') {
+                log('Mob Control', 'Moving Mob Up')
+                if (index + mobsToMove === d.e.length) {
+                    log('Mob Control', 'Moving City Up')
+                    mob_control.moveCity()
+                    return
                 }
+                newMobI = index + mobsToMove
+            }
 
-                if (mob_control.direction == 'down') {
-                    log('Mob Control', 'Moving Mob Down')
-                    if (index == 0 || index - mobsToMove < 0) {
-                        log('Mob Control', 'Moving City Down')
-                        mob_control.moveCity()
-                        return
-                    }
-                    newMobI = index - mobsToMove
+            if (mob_control.direction == 'down') {
+                log('Mob Control', 'Moving Mob Down')
+                if (index == 0 || index - mobsToMove < 0) {
+                    log('Mob Control', 'Moving City Down')
+                    mob_control.moveCity()
+                    return
                 }
-                $(document).one('roa-ws:battle', mob_control.moveMob2)
+                newMobI = index - mobsToMove
+            }
+            $(document).one('roa-ws:battle', mob_control.moveMob2)
 
-                let newMob = d.e[newMobI]
-                $("#enemyList").val(newMob.v)
-                click('#autoEnemy')
+            let newMob = d.e[newMobI]
+            $("#enemyList").val(newMob.v)
+            click('#autoEnemy')
 
-            }, settings.get('setting.delay'))
         },
         moveMob2(e, d) {
             // log('Mob Control', 'Mob Moved')
@@ -514,34 +511,32 @@
             $(document).one('roa-ws:page:town_travel', mob_control.moveCity3)
             click('#loadTravel')
         },
-        moveCity3(e, d) {
+        async moveCity3(e, d) {
             // log('Mob Control', 'Travel Loaded')
             $(document).one('roa-ws:page:travel', mob_control.moveCity4)
-            setTimeout(() => {
-                if (mob_control.direction === 'up') {
-                    $('#area_list option:selected').next().attr('selected', 'selected')
-                } else {
-                    $('#area_list option:selected').prev().attr('selected', 'selected')
-                }
-                click('#travel_confirm')
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            if (mob_control.direction === 'up') {
+                $('#area_list option:selected').next().attr('selected', 'selected')
+            } else {
+                $('#area_list option:selected').prev().attr('selected', 'selected')
+            }
+            click('#travel_confirm')
         },
         moveCity4(e, d) {
             // log('Mob Control', 'Travel Finished')
             $(document).one('roa-ws:page:town_battlegrounds', mob_control.moveCity5)
             click('#battleGrounds')
         },
-        moveCity5(e, d) {
+        async moveCity5(e, d) {
             // log('Mob Control', 'Selecting Bottom Mob')
             $(document).one('roa-ws:battle', mob_control.moveMob2)
-            setTimeout(() => {
-                if (mob_control.direction === 'up') {
-                    $("#enemyList option:first").attr('selected', 'selected')
-                } else {
-                    $("#enemyList option:last").attr('selected', 'selected')
-                }
-                click('#autoEnemy')
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            if (mob_control.direction === 'up') {
+                $("#enemyList option:first").attr('selected', 'selected')
+            } else {
+                $("#enemyList option:last").attr('selected', 'selected')
+            }
+            click('#autoEnemy')
         },
         reset() {
             $('#clearBattleStats').click()
@@ -623,8 +618,6 @@
                 log('Chat', 'In Channel')
                 vars.checkingChannel = false
                 $(document).off('roa-ws:chanlist2 roa-ws:notification', channel.result)
-                //$(document).on('roa-ws:message', channel.idCheck)
-                //chat.sendAltChannel('Channel ID Check: ' + vars.username)
                 let id  = parseInt($('#chatChannel #channel' + settings.get('setting.bot_channel_name')).val())
                 channel.setId(id)
                 log('Chat', 'Channel ID: ' + id)
@@ -698,60 +691,58 @@
 
     let quest = {
         type: null,
-        stop(type) {
+        async stop(type) {
             quest.type = type
             vars.actionPending = true
             log(true, 'Quest stopping: ' + type)
-            setTimeout(() => {
-                $(document).one('roa-ws:page:quests', quest.stop2)
-                click('a.questCenter')
-            }, 1000)
+            await sleep(settings.get('setting.delay'))
+            $(document).one('roa-ws:page:quests', quest.stop2)
+            click('a.questCenter')
         },
-        start(type) {
+        async start(type) {
             quest.type = type
             vars.actionPending = true
             log(true, 'Quest starting: ' + type)
-            setTimeout(() => {
-                $(document).one('roa-ws:page:quests', quest.start2)
-                click('a.questCenter')
-            }, 1000)
+            await sleep(settings.get('setting.delay'))
+            $(document).one('roa-ws:page:quests', quest.start2)
+            click('a.questCenter')
         },
-        stop2(event, data) {
-            setTimeout(() => {
-                setTimeout(() =>{
-                    $(document).one('roa-ws:page:quest_complete', quest.done)
-                }, 500)
-                let maxReward = parseInt(document.querySelector('.max_quest_crystals').textContent);
-                if (!isNaN(maxReward)) {
-                    document.querySelectorAll('.quest_crystal_guess').forEach((e) => {
-                        e.value = maxReward;
-                    });
-                }
+        async stop2(event, data) {
+            await sleep(settings.get('setting.delay'))
 
-                if (quest.type == 'battle') {
-                    click("input.completeQuest[data-questtype='kill']")
-                }
-                if (quest.type == 'ts') {
-                    click("input.completeQuest[data-questtype='tradeskill']")
-                }
-                if (quest.type == 'professional') {
-                    click("input.completeQuest[data-questtype='profession']")
-                }
-            }, settings.get('setting.delay'))
+            setTimeout(() =>{ // This seemed to get triggered twice for some reason so we need the delay here
+                $(document).one('roa-ws:page:quest_complete', quest.done)
+            }, 500)
+
+            let maxReward = parseInt(document.querySelector('.max_quest_crystals').textContent);
+            if (!isNaN(maxReward)) {
+                document.querySelectorAll('.quest_crystal_guess').forEach((e) => {
+                    e.value = maxReward;
+                });
+            }
+
+            if (quest.type == 'battle') {
+                click("input.completeQuest[data-questtype='kill']")
+            }
+            if (quest.type == 'ts') {
+                click("input.completeQuest[data-questtype='tradeskill']")
+            }
+            if (quest.type == 'professional') {
+                click("input.completeQuest[data-questtype='profession']")
+            }
         },
-        start2(event, data) {
-            setTimeout(() => {
-                $(document).one('roa-ws:page:quest_request', quest.done)
-                if (quest.type == 'battle') {
-                    click("input.questRequest[data-questtype='kill']")
-                }
-                if (quest.type == 'ts') {
-                    click("input.questRequest[data-questtype='tradeskill']")
-                }
-                if (quest.type == 'professional') {
-                    click("input.questRequest[data-questtype='profession']")
-                }
-            }, settings.get('setting.delay'))
+        async start2(event, data) {
+            await sleep(settings.get('setting.delay'))
+            $(document).one('roa-ws:page:quest_request', quest.done)
+            if (quest.type == 'battle') {
+                click("input.questRequest[data-questtype='kill']")
+            }
+            if (quest.type == 'ts') {
+                click("input.questRequest[data-questtype='tradeskill']")
+            }
+            if (quest.type == 'professional') {
+                click("input.questRequest[data-questtype='profession']")
+            }
         },
         done(event, data) {
             quest.type = null
@@ -766,94 +757,93 @@
             $(document).one('roa-ws:page:house_room_item', harvestron.step1)
             click("a#harvestronNotifier")
         },
-        step1(event, data) {
+        async step1(event, data) {
             $(document).one('roa-ws:page:house_harvest_job', finish)
-            setTimeout(() => {
-                let type = settings.get('control.harvestron_type')
-                let tmp = [
-                    {
-                        name: 'food',
-                        level: getInt($('td#fishing').text()),
-                        res: getInt($("td.myfood").attr('data-personal'))
-                    },
-                    {
-                        name: 'wood',
-                        level: getInt($('td#woodcutting').text()),
-                        res: getInt($("td.mywood").attr('data-personal'))
-                    },
-                    {
-                        name: 'iron',
-                        level: getInt($('td#mining').text()),
-                        res: getInt($("td.myiron").attr('data-personal'))
-                    },
-                    {
-                        name: 'stone',
-                        level: getInt($('td#stonecutting').text()),
-                        res: getInt($("td.mystone").attr('data-personal'))
-                    },
-                ]
+            await sleep(settings.get('setting.delay'))
+            let type = settings.get('control.harvestron_type')
+            let tmp = [
+                {
+                    name: 'food',
+                    level: getInt($('td#fishing').text()),
+                    res: getInt($("td.myfood").attr('data-personal'))
+                },
+                {
+                    name: 'wood',
+                    level: getInt($('td#woodcutting').text()),
+                    res: getInt($("td.mywood").attr('data-personal'))
+                },
+                {
+                    name: 'iron',
+                    level: getInt($('td#mining').text()),
+                    res: getInt($("td.myiron").attr('data-personal'))
+                },
+                {
+                    name: 'stone',
+                    level: getInt($('td#stonecutting').text()),
+                    res: getInt($("td.mystone").attr('data-personal'))
+                },
+            ]
 
-                if (type == 'lowest_level') {
-                    tmp.sort((a, b) => a.level - b.level)
-                    type = tmp.shift().name
-                }
+            if (type == 'lowest_level') {
+                tmp.sort((a, b) => a.level - b.level)
+                type = tmp.shift().name
+            }
 
-                if (type == 'highest_level') {
-                    tmp.sort((a, b) => b.level - a.level)
-                    type = tmp.shift().name
-                }
+            if (type == 'highest_level') {
+                tmp.sort((a, b) => b.level - a.level)
+                type = tmp.shift().name
+            }
 
-                if (type == 'lowest_resource') {
-                    tmp.sort((a, b) => a.res - b.res)
-                    type = tmp.shift().name
-                }
+            if (type == 'lowest_resource') {
+                tmp.sort((a, b) => a.res - b.res)
+                type = tmp.shift().name
+            }
 
-                if (type == 'highest_resource') {
-                    tmp.sort((a, b) => b.res - a.res)
-                    type = tmp.shift().name
-                }
+            if (type == 'highest_resource') {
+                tmp.sort((a, b) => b.res - a.res)
+                type = tmp.shift().name
+            }
 
-                if (type == 'round_robin') {
-                    type = harvestron.next
-                    switch(harvestron.next) {
-                        case 'food':
-                            harvestron.next = 'wood'
-                            break;
-
-                        case 'wood':
-                            harvestron.next = 'iron'
-                            break;
-
-                        case 'iron':
-                            harvestron.next = 'stone'
-                            break;
-
-                        case 'stone':
-                            harvestron.next = 'food'
-                            break;
-                    }
-                }
-
-                switch(type) {
+            if (type == 'round_robin') {
+                type = harvestron.next
+                switch(harvestron.next) {
                     case 'food':
-                        $('#houseHarvestingJobSkill').val('0')
+                        harvestron.next = 'wood'
                         break;
 
                     case 'wood':
-                        $('#houseHarvestingJobSkill').val('1')
+                        harvestron.next = 'iron'
                         break;
 
                     case 'iron':
-                        $('#houseHarvestingJobSkill').val('2')
+                        harvestron.next = 'stone'
                         break;
 
                     case 'stone':
-                        $('#houseHarvestingJobSkill').val('3')
+                        harvestron.next = 'food'
                         break;
                 }
-                $('#houseHarvestingJobTime').val('30')
-                click('#houseHarvestingJobStart')
-            }, settings.get('setting.delay'))
+            }
+
+            switch(type) {
+                case 'food':
+                    $('#houseHarvestingJobSkill').val('0')
+                    break;
+
+                case 'wood':
+                    $('#houseHarvestingJobSkill').val('1')
+                    break;
+
+                case 'iron':
+                    $('#houseHarvestingJobSkill').val('2')
+                    break;
+
+                case 'stone':
+                    $('#houseHarvestingJobSkill').val('3')
+                    break;
+            }
+            $('#houseHarvestingJobTime').val('30')
+            click('#houseHarvestingJobStart')
         }
     }
 
@@ -905,15 +895,16 @@
             click("#trainPage")
         },
 
-        initialize(event, data) {
+        async initialize(event, data) {
             trainingCenter.usablePlat = getInt($('.platinum').first().attr('title')) //Math.min(getInt($('.platinum').first().attr('title')), getInt(settings.get('trainingcenter.max_plat')))
 
             $('#my-fake-tc-div').attr('title', '').addClass('platinum')
             trainingCenter.stage = 1
-            setTimeout(() => trainingCenter.step1(), settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            trainingCenter.step1()
         },
 
-        step1() {
+        async step1() {
             if (trainingCenter.type != 'battle' || trainingCenter.stage == 8) {
                 $(document).one('roa-ws:page:train_skill', trainingCenter.finish)
             } else {
@@ -1031,15 +1022,16 @@
             }
 
             selectorMax.click()
-            setTimeout(() => {
-                let int = parseInt(selectorInput.val())
-                if (int > trainingCenter.maxUpgradesAtOnce) {
-                    selectorInput.val(trainingCenter.maxUpgradesAtOnce)
-                }
-                setTimeout(() =>{
-                    selectorButton.click()
-                }, 200)
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            // TODO: Right here do a loop or something,
+            let int = parseInt(selectorInput.val())
+            if (int > trainingCenter.maxUpgradesAtOnce) {
+                selectorInput.val(trainingCenter.maxUpgradesAtOnce)
+            }
+            setTimeout(() =>{
+                selectorButton.click()
+            }, 200)
+
         },
 
         finish() {
@@ -1072,140 +1064,137 @@
             $(document).one('roa-ws:page:house', housing.step1)
             click("li#housing")
         },
-        step1(event, data) {
-            setTimeout(() => {
-                // Build Slowest
-                if (settings.get('control.construction_type') === 'slowest') {
-                    $(document).one('roa-ws:page:house_room_item', housing.upgrade)
-                    setTimeout(() => { $("#houseQuickBuildList li:last").find(".houseViewRoomItem").click() }, settings.get('setting.delay'))
+        async step1(event, data) {
+            await sleep(settings.get('setting.delay'))
+            // Build Slowest
+            if (settings.get('control.construction_type') === 'slowest') {
+                $(document).one('roa-ws:page:house_room_item', housing.upgrade)
+                await sleep(settings.get('setting.delay'))
+                $("#houseQuickBuildList li:last").find(".houseViewRoomItem").click()
+            } else {
+                // Build Room
+                if ($("#houseRoomCanBuild").is(":visible")) {
+                    $(document).one('roa-ws:page:house_build_room', housing.step3)
+                    await sleep(settings.get('setting.delay'))
+                    $("#houseBuildRoom")[0].click()
+                // Build item
+                } else if ($("#houseQuickBuildList li:first").find(".houseViewRoom").length == 1) {
+                    $(document).one('roa-ws:page:house_room', housing.build_item)
+                    await sleep(settings.get('setting.delay'))
+                    $("#houseQuickBuildList li:first").find(".houseViewRoom").click()
+                // Build Quickest
                 } else {
-                    // Build Room
-                    if ($("#houseRoomCanBuild").is(":visible")) {
-                        $(document).one('roa-ws:page:house_build_room', housing.step3)
-                        setTimeout(() => { $("#houseBuildRoom")[0].click() }, settings.get('setting.delay'))
-                    // Build item
-                    } else if ($("#houseQuickBuildList li:first").find(".houseViewRoom").length == 1) {
-                        $(document).one('roa-ws:page:house_room', housing.build_item)
-                        setTimeout(() => { $("#houseQuickBuildList li:first").find(".houseViewRoom").click() }, settings.get('setting.delay'))
-                    // Build Quickest
-                    } else {
-                        setTimeout(() => {
-                            let first = $("#houseQuickBuildList li:first")
+                    await sleep(settings.get('setting.delay'))
+                    let first = $("#houseQuickBuildList li:first")
 
-                            // Remove Mannequin
-                            if (first.text().includes('Mannequin')) {
-                                $(document).one('roa-ws:page:house_ignore_build', housing.ignore)
-                                setTimeout(() => {
-                                    first.find('.houseIgnoreQuickBuild').click()
-                                }, settings.get('setting.delay'))
-                                return
-                            }
-
-                            // Clean house items after level 37
-                            if (data.l >= 30 && settings.get('control.construction_cleanup')) {
-                                let accepted = [
-                                    "Battle Experience Boost",
-                                    "Stat Drop Boost",
-                                    "Drop Boost",
-                                    "Gold Boost",
-                                    "Construction Boost"
-                                ]
-                                let agi = 0,
-                                    hp = 0,
-                                    str = 0,
-                                    coord = 0,
-                                    qb = 0,
-                                    apen
-                                try {
-                                    //fhc = parseInt(data.bonuses.Miscellaneous[94].split(" ", 1)[0].replace('+', '').replace('%', ''))
-                                    agi = parseFloat(data.bonuses.Stats[17].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
-                                    hp = parseFloat(data.bonuses.Stats[15].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
-                                    str = parseFloat(data.bonuses.Stats[14].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
-                                    coord = parseFloat(data.bonuses.Stats[16].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
-                                    qb = parseInt(data.bonuses["Crystal Shop"][64].split(" ", 1)[0].replace('+', '').replace('%', ''))
-                                    apen = parseFloat(data.bonuses.Miscellaneous[97].split(" ", 1)[0].replace('+', '').replace('%', ''))
-                                } catch(e) {}
-                                
-                                // if (fhc < 50) {
-                                //     accepted.push("First Hit Chance")
-                                // }
-                                if (str < 40) {
-                                    accepted.push('Strength')
-                                }
-                                if (coord < 40) {
-                                    accepted.push('Coordination')
-                                }
-                                if (hp < 40) {
-                                    accepted.push('Health')
-                                }
-                                if (agi < 80) {
-                                    accepted.push('Agility')
-                                }
-                                if (qb < 150) {
-                                    accepted.push('Quest Boost')
-                                }
-                                if (apen < 50) {
-                                    accepted.push('Armor Penetration')
-                                }
-                                
-                                let firstBonus = first.find('span').text()
-                                if (!accepted.some(v => firstBonus.includes(v))) {
-                                    $(document).one('roa-ws:page:house_ignore_build', housing.ignore)
-                                    setTimeout(() => {
-                                        first.find('.houseIgnoreQuickBuild').click()
-                                    }, settings.get('setting.delay'))
-                                    return
-                                }
-                            }
-
-                            // Build if nothing needs cleaned
-                            let firstLink = first.find(".houseViewRoomItem")
-                            if (firstLink.hasClass('disabled')) {
-                                settings.set('control.construction', false)
-                                setOptions()
-                                housing.step3()
-                                return
-                            }
-                            $(document).one('roa-ws:page:house_room_item', housing.upgrade)
-                            setTimeout(() => {
-                                firstLink.click()
-                            }, settings.get('setting.delay'))
-                        }, settings.get('setting.delay'))
+                    // Remove Mannequin
+                    if (first.text().includes('Mannequin')) {
+                        $(document).one('roa-ws:page:house_ignore_build', housing.ignore)
+                        await sleep(settings.get('setting.delay'))
+                        first.find('.houseIgnoreQuickBuild').click()
+                        return
                     }
+
+                    // Clean house items after level 37
+                    if (data.l >= 30 && settings.get('control.construction_cleanup')) {
+                        let accepted = [
+                            "Battle Experience Boost",
+                            "Stat Drop Boost",
+                            "Drop Boost",
+                            "Gold Boost",
+                            "Construction Boost"
+                        ]
+                        let agi = 0,
+                            hp = 0,
+                            str = 0,
+                            coord = 0,
+                            qb = 0,
+                            apen
+                        try {
+                            //fhc = parseInt(data.bonuses.Miscellaneous[94].split(" ", 1)[0].replace('+', '').replace('%', ''))
+                            agi = parseFloat(data.bonuses.Stats[17].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
+                            hp = parseFloat(data.bonuses.Stats[15].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
+                            str = parseFloat(data.bonuses.Stats[14].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
+                            coord = parseFloat(data.bonuses.Stats[16].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
+                            qb = parseInt(data.bonuses["Crystal Shop"][64].split(" ", 1)[0].replace('+', '').replace('%', ''))
+                            apen = parseFloat(data.bonuses.Miscellaneous[97].split(" ", 1)[0].replace('+', '').replace('%', ''))
+                        } catch(e) {}
+                        
+                        // if (fhc < 50) {
+                        //     accepted.push("First Hit Chance")
+                        // }
+                        if (str < 40) {
+                            accepted.push('Strength')
+                        }
+                        if (coord < 40) {
+                            accepted.push('Coordination')
+                        }
+                        if (hp < 40) {
+                            accepted.push('Health')
+                        }
+                        if (agi < 80) {
+                            accepted.push('Agility')
+                        }
+                        if (qb < 150) {
+                            accepted.push('Quest Boost')
+                        }
+                        if (apen < 50) {
+                            accepted.push('Armor Penetration')
+                        }
+                        
+                        let firstBonus = first.find('span').text()
+                        if (!accepted.some(v => firstBonus.includes(v))) {
+                            $(document).one('roa-ws:page:house_ignore_build', housing.ignore)
+                            await sleep(settings.get('setting.delay'))
+                            first.find('.houseIgnoreQuickBuild').click()
+                            return
+                        }
+                    }
+
+                    // Build if nothing needs cleaned
+                    let firstLink = first.find(".houseViewRoomItem")
+                    if (firstLink.hasClass('disabled')) {
+                        settings.set('control.construction', false)
+                        setOptions()
+                        housing.step3()
+                        return
+                    }
+                    $(document).one('roa-ws:page:house_room_item', housing.upgrade)
+                    await sleep(settings.get('setting.delay'))
+                    firstLink.click()
                 }
-            }, settings.get('setting.delay'))
+            }
         },
-        upgrade(event, data) {
-            setTimeout(() => {
-                if ($("#houseRoomItemUpgradeTier").is(":visible")) {
-                    $(document).one('roa-ws:page:house_room_item_upgrade_tier', housing.step3)
-                    setTimeout(() => { $("#houseRoomItemUpgradeTier").click() }, settings.get('setting.delay'))
-                } else {
-                    $(document).one('roa-ws:page:house_room_item_upgrade_level', housing.step3)
-                    setTimeout(() => { $("#houseRoomItemUpgradeLevel").click() }, settings.get('setting.delay'))
-                }
-            }, settings.get('setting.delay'))
+        async upgrade(event, data) {
+            await sleep(settings.get('setting.delay'))
+            if ($("#houseRoomItemUpgradeTier").is(":visible")) {
+                $(document).one('roa-ws:page:house_room_item_upgrade_tier', housing.step3)
+                await sleep(settings.get('setting.delay'))
+                $("#houseRoomItemUpgradeTier").click()
+            } else {
+                $(document).one('roa-ws:page:house_room_item_upgrade_level', housing.step3)
+                await sleep(settings.get('setting.delay'))
+                $("#houseRoomItemUpgradeLevel").click()
+            }
         },
-        build_item(event, data) {
-            setTimeout(() => {
-                $(document).one('roa-ws:page:house_build_room_item', housing.step3)
-                setTimeout(() => { $("#houseBuildRoomItem").click() }, settings.get('setting.delay'))
-            }, settings.get('setting.delay'))
+        async build_item(event, data) {
+            await sleep(settings.get('setting.delay'))
+            $(document).one('roa-ws:page:house_build_room_item', housing.step3)
+            await sleep(settings.get('setting.delay'))
+            $("#houseBuildRoomItem").click()
         },
-        ignore(event, data) {
-            setTimeout(() => {
-                housing.build()
-            }, settings.get('setting.delay'))
+        async ignore(event, data) {
+            await sleep(settings.get('setting.delay'))
+            housing.build()
         },
-        step3(event, data) {
-            setTimeout(() => {
-                setTimeout(() => { // Because of v fucked this with queued rooms
-                    vars.actionPending = false
-                    vars.actionCount = 0
-                }, 6000)
-                
-                $(".closeModal").click()
-            }, settings.get('setting.delay'))
+        async step3(event, data) {
+            await sleep(settings.get('setting.delay'))
+            setTimeout(() => { // Because of v fucked this with queued rooms
+                vars.actionPending = false
+                vars.actionCount = 0
+            }, 6000)
+            
+            $(".closeModal").click()
         },
 
         disposal(event, data) {
@@ -1213,23 +1202,22 @@
             $(document).one('roa-ws:page:house_room_item', housing.disposal2)
             openHouseRoom(3, 91)
         },
-        disposal2(event, data) {
+        async disposal2(event, data) {
             $(document).one('roa-ws:page:house_trash_compactor_setting', housing.step3)
-            setTimeout(() => {
-                let highest = 0
-                $('#houseTrashCompactorToggle option').each(function() {
-                    let val = parseInt($(this).attr('value'))
-                    if (val <= 5) {
-                        if (val > highest) {
-                            highest = val
-                        }
+            await sleep(settings.get('setting.delay'))
+            let highest = 0
+            $('#houseTrashCompactorToggle option').each(function() {
+                let val = parseInt($(this).attr('value'))
+                if (val <= 5) {
+                    if (val > highest) {
+                        highest = val
                     }
-                })
+                }
+            })
 
-                $('#houseTrashCompactorToggle').val(highest)
-                $('#houseTrashCompactorCraftingToggle').val(3)
-                $('#houseTrashCompactorSelect').click()
-            }, 500)
+            $('#houseTrashCompactorToggle').val(highest)
+            $('#houseTrashCompactorCraftingToggle').val(3)
+            $('#houseTrashCompactorSelect').click()
         }
     }
 
@@ -1333,36 +1321,34 @@
             $(document).one('roa-ws:page:house_room_item', crafting.fill_2)
             click(".craftingTableLink")
         },
-        fill_2(event, data) {
+        async fill_2(event, data) {
             $(document).one('roa-ws:page:craft_item', finish)
-            setTimeout(() => {
-                $("#craftingItemLevelMax").click()
-                $("#craftingQuality").val(settings.get('setting.crafting_quality'))
-                $("#craftingType").val(settings.get('setting.crafting_item'))
-                $("#houseCraftingVetoList").multiSelect('deselect_all')
-                $("#craftingJobFillQueue").click()
-                click('.craftingJobStartQueue[data-position="back"]')
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            $("#craftingItemLevelMax").click()
+            $("#craftingQuality").val(settings.get('setting.crafting_quality'))
+            $("#craftingType").val(settings.get('setting.crafting_item'))
+            $("#houseCraftingVetoList").multiSelect('deselect_all')
+            $("#craftingJobFillQueue").click()
+            click('.craftingJobStartQueue[data-position="back"]')
         },
         start() {
             vars.actionPending = true
             $(document).one('roa-ws:page:house_room_item', crafting.start_2)
             click(".craftingTableLink")
         },
-        start_2(event, data) {
+        async start_2(event, data) {
             $(document).one('roa-ws:page:craft_item', finish)
-            setTimeout(() => {
-                if ($("#craft_sortable span.itemWithTooltip").length > 0) {
-                    click('#craft_sortable .craftingResumeButton:first')
-                } else {
-                    $("#craftingItemLevelMax").click()
-                    $("#craftingQuality").val(settings.get('setting.crafting_quality'))
-                    $("#craftingType").val(settings.get('setting.crafting_item'))
-                    $("#houseCraftingVetoList").multiSelect('deselect_all')
-                    $("#craftingJobFillQueue").click()
-                    click('#craftingJobStart')
-                }
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            if ($("#craft_sortable span.itemWithTooltip").length > 0) {
+                click('#craft_sortable .craftingResumeButton:first')
+            } else {
+                $("#craftingItemLevelMax").click()
+                $("#craftingQuality").val(settings.get('setting.crafting_quality'))
+                $("#craftingType").val(settings.get('setting.crafting_item'))
+                $("#houseCraftingVetoList").multiSelect('deselect_all')
+                $("#craftingJobFillQueue").click()
+                click('#craftingJobStart')
+            }
         },
         addToQueue(level, type, filters) {
             crafting.queue.push({
@@ -1383,21 +1369,18 @@
             $(document).one('roa-ws:page:house_room_item', crafting.addFromQueue_2)
             click(".craftingTableLink")
         },
-        addFromQueue_2(event, data) {
+        async addFromQueue_2(event, data) {
             $(document).one('roa-ws:page:craft_item', finish)
             let item = crafting.queue.shift()
-            setTimeout(() => {
-                $("#craftingItemLevel").val(item.level)
-                $("#craftingQuality").val('7')
-                $("#craftingType").val(item.type)
-                $("#houseCraftingVetoList").multiSelect('select_all')
-                setTimeout(() => {
-                    $("#houseCraftingVetoList").multiSelect('deselect', item.filters)
-                    setTimeout(() => {
-                        click('.craftingJobStartQueue[data-position="back"]')
-                    }, 100)
-                }, 100)
-            }, settings.get('setting.delay'))
+            $("#craftingItemLevel").val(item.level)
+            $("#craftingQuality").val('7')
+            $("#craftingType").val(item.type)
+            $("#houseCraftingVetoList").multiSelect('select_all')
+
+            await sleep(100)
+            $("#houseCraftingVetoList").multiSelect('deselect', item.filters)
+            await sleep(100)
+            click('.craftingJobStartQueue[data-position="back"]')
         },
     }
 
@@ -1407,49 +1390,39 @@
             $(document).one('roa-ws:page:house_room_item', carving.fill_2)
             click('.carvingBenchLink')
         },
-        fill_2(event, data) {
+        async fill_2(event, data) {
             $(document).one('roa-ws:page:carve_gem', finish)
-            setTimeout(() => {
-                let maxLevel = $('#carvingItemLevel option:last').val()
-                let efficentLevel = maxLevel - (maxLevel + 1) % 3 // KLeeping this around but not used because training gems
-                $('#carvingItemLevel').val(maxLevel)
-                $('#carvingType').val('65535')
-                let gemsToAdd = Math.min(15, $('#carvingJobCountMax').attr('data-max'))
-                $('#carvingJobCount').val(gemsToAdd)
-                click('.carvingJobStartQueue[data-position="back"]')
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            let maxLevel = $('#carvingItemLevel option:last').val()
+            let efficentLevel = maxLevel - (maxLevel + 1) % 3 // KLeeping this around but not used because training gems
+            $('#carvingItemLevel').val(maxLevel)
+            $('#carvingType').val('65535')
+            let gemsToAdd = Math.min(15, $('#carvingJobCountMax').attr('data-max'))
+            $('#carvingJobCount').val(gemsToAdd)
+            click('.carvingJobStartQueue[data-position="back"]')
         },
         start() {
             vars.actionPending = true
             $(document).one('roa-ws:page:house_room_item', carving.start_2)
             click('.carvingBenchLink')
         },
-        start_2(event, data) {
+        async start_2(event, data) {
             $(document).one('roa-ws:page:carve_gem', finish)
-            setTimeout(() => {
-                // Resume current gems
-                if ($("#carve_sortable span.gemWithTooltip").length > 0) {
-                    click('#carve_sortable .carvingResumeButton:first')
-                } else {
-                    let maxLevel = $('#carvingItemLevel option:last').val()
-                    // let efficentLevel = maxLevel - (maxLevel + 1) % 3
-                    // $('#carvingItemLevel').val(efficentLevel)
-                    $('#carvingItemLevel').val(maxLevel)
-                    $('#carvingType').val('65535')
-                    let gemsToAdd = Math.min(30, $('#carvingJobCountMax').attr('data-max'))
-                    $('#carvingJobCount').val(gemsToAdd)
-                    click('#carvingJobStart')
-                }
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            // Resume current gems
+            if ($("#carve_sortable span.gemWithTooltip").length > 0) {
+                click('#carve_sortable .carvingResumeButton:first')
+            } else {
+                let maxLevel = $('#carvingItemLevel option:last').val()
+                // let efficentLevel = maxLevel - (maxLevel + 1) % 3
+                // $('#carvingItemLevel').val(efficentLevel)
+                $('#carvingItemLevel').val(maxLevel)
+                $('#carvingType').val('65535')
+                let gemsToAdd = Math.min(30, $('#carvingJobCountMax').attr('data-max'))
+                $('#carvingJobCount').val(gemsToAdd)
+                click('#carvingJobStart')
+            }
         }
-    }
-
-    let finish = function() {
-        setTimeout(() => {
-            vars.actionPending = false
-            vars.actionCount = 0
-            $(".closeModal").click()
-        }, settings.get('setting.delay'))
     }
 
     let spawngem = {
@@ -1483,51 +1456,54 @@
             spawngem.updateQueueDisplay()
         },
 
-        create() {
+        async create() {
             vars.actionPending = true
             vars.canSpawnGem = false
 
             $(document).one('roa-ws:modalContent', spawngem.create_2)
-            setTimeout(() => chat.sendAny('/spawngem'), settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            chat.sendAny('/spawngem')
         },
 
-        create_2(e, d) {
+        async create_2(e, d) {
             let gem = spawngem.queue.shift()
             $(document).one('roa-ws:page:gem_spawn', spawngem.create_3)
+            
+            await sleep(settings.get('setting.delay'))
+            
+            $('#spawnGemLevel').val(gem.level)
+            $('#gemSpawnType').val(gem.primary)
+            $('#gemSpawnSpliceType').val(gem.secondary)
+            $('#gemSpawnCount').val(gem.amount > 60 ? 60 : gem.amount)
+            click('#gemSpawnConfirm')
 
-            setTimeout(() => {
-                $('#spawnGemLevel').val(gem.level)
-                $('#gemSpawnType').val(gem.primary)
-                $('#gemSpawnSpliceType').val(gem.secondary)
-                $('#gemSpawnCount').val(gem.amount > 60 ? 60 : gem.amount)
-                click('#gemSpawnConfirm')
+            if (gem.amount > 60) {
+                gem.amount -= 60
+                spawngem.queue.unshift(gem)
+            }
 
-                if (gem.amount > 60) {
-                    gem.amount -= 60
-                    spawngem.queue.unshift(gem)
-                }
+            spawngem.updateQueueDisplay()
 
-                spawngem.updateQueueDisplay()
-
-            }, settings.get('setting.delay'))
         },
 
-        create_3(e, d) {
+        async create_3(e, d) {
             setTimeout(() => vars.canSpawnGem = true, 65 * 1000)
-            setTimeout(() => {
-                click('a.green')
-                setTimeout(() => {
-                    finish()
-                }, settings.get('setting.delay'))
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            click('a.green')
+            await sleep(settings.get('setting.delay'))
+            finish()
         },
 
         updateQueueDisplay() {
-            $('#spawngem_queue').html(JSON.stringify(spawngem.queue, null, 2))
+            rows = []
 
-            // spawngem.queue.forEach(gem => {
-            //     //
-            // })
+            spawngem.queue.forEach(gem => {
+                let pName = spawngem.gems.find(g => g.value == gem.primary)
+                let sName = spawngem.gems.find(g => g.value == gem.secondary)
+                rows.push(`<tr><td>${pName.name}</td><td>${sName.name}</td><td>${gem.level * 10} / ${gem.level}</td><td>${gem.amount}</td>`)
+            })
+
+            $('#spawngem_queue').html(rows.join(`\n`))
         }
     }
 
@@ -1541,25 +1517,16 @@
             $(document).one('roa-ws:page:settings_preferences', timers.step2)
             click('button#settingsAccountPreferences')
         },
-        step2(event, data) {
-            $(document).one('roa-ws:page:settings_preferences_change', timers.step3)
-            setTimeout(() => {
-                $('input.preferenceButton[data-type="4"]').click()
-                setTimeout(() => {
-                    $('label.switch[for="preference-19-choice-1"]').click()
-                    $('label.switch[for="preference-19-choice-2"]').click()
-                    $('label.switch[for="preference-19-choice-4"]').click()
-                    $('label.switch[for="preference-19-choice-8"]').click()
-                    click('input#settingsSavePreferenceChanges')
-                }, settings.get('setting.delay'))
-            }, settings.get('setting.delay'))
-        },
-        step3(event, data) {
-            setTimeout(() => {
-                vars.actionPending = false
-                vars.actionCount = 0
-                $(".closeModal").click()
-            }, settings.get('setting.delay'))
+        async step2(event, data) {
+            $(document).one('roa-ws:page:settings_preferences_change', finish)
+            await sleep(settings.get('setting.delay'))
+            $('input.preferenceButton[data-type="4"]').click()
+            await sleep(settings.get('setting.delay'))
+            $('label.switch[for="preference-19-choice-1"]').click()
+            $('label.switch[for="preference-19-choice-2"]').click()
+            $('label.switch[for="preference-19-choice-4"]').click()
+            $('label.switch[for="preference-19-choice-8"]').click()
+            click('input#settingsSavePreferenceChanges')
         }
     }
 
@@ -1605,13 +1572,10 @@
             })
             setTimeout(()=> { ingredients.finish() }, (((i - 1) * 5500) + 1000) )
         },
-        finish() {
+        async finish() {
             this.to = null
-            setTimeout(() => {
-                vars.actionPending = false
-                vars.actionCount = 0
-                $(".closeModal").click()
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            finish()
         }
     }
 
@@ -1883,39 +1847,38 @@
             $(document).one('roa-ws:page:town_blacksmith', equipment.buyToolTier3)
             click('#loadBlacksmith')
         },
-        buyToolTier3(event, data) {
-            setTimeout(() => {
-                let tool = $('a.tool_cost[data-type="' + equipment.type + '"]')
-                let tier = parseInt(tool.attr('data-tier'))
-                let canBuy = false
-                if (tier == 0) {
-                    let total = getCurrency('gold')
-                    if (total > 10000) {
-                        canBuy = true
-                    }
-                } else {
-                    let total = getCurrency('crystals')
-                    if (total >= tier * 25) {
-                        canBuy = true
-                    }
+        async buyToolTier3(event, data) {
+            await sleep(settings.get('setting.delay'))
+            let tool = $('a.tool_cost[data-type="' + equipment.type + '"]')
+            let tier = parseInt(tool.attr('data-tier'))
+            let canBuy = false
+            if (tier == 0) {
+                let total = getCurrency('gold')
+                if (total > 10000) {
+                    canBuy = true
                 }
+            } else {
+                let total = getCurrency('crystals')
+                if (total >= tier * 25) {
+                    canBuy = true
+                }
+            }
 
-                /* Make sure we have enough to transport the item to highest town */
-                /* Possibly fix this to get the gold but I gotta figure out how that even works */
-                if (getCurrency('gold') < 22000000) {
-                    canBuy = false
-                }
-                
-                if (canBuy) {
-                    $(document).one('roa-ws:page:buy_item', equipment.buyToolTier4)
-                    setTimeout(() => {
-                        tool.click()
-                        setTimeout(() => $('a.green').click(), 500)
-                    }, settings.get('setting.delay'))
-                } else {
-                    equipment.finish()
-                }
-            }, settings.get('setting.delay'))
+            /* Make sure we have enough to transport the item to highest town */
+            /* Possibly fix this to get the gold but I gotta figure out how that even works */
+            if (getCurrency('gold') < 22000000) {
+                canBuy = false
+            }
+            
+            if (canBuy) {
+                $(document).one('roa-ws:page:buy_item', equipment.buyToolTier4)
+                await sleep(settings.get('setting.delay'))
+                tool.click()
+                await sleep(500)
+                $('a.green').click()
+            } else {
+                equipment.finish()
+            }
         },
         buyToolTier4(event, data) {
             if (data.hasOwnProperty('needs_confirm') && data.needs_confirm) {
@@ -1925,12 +1888,11 @@
                 equipment.finish()
             }
         },
-        finish() {
-            setTimeout(() => {
-                vars.actionPending = false
-                vars.actionCount = 0
-                actions.change(vars.lastAction)
-            }, settings.get('setting.delay'))
+        async finish() {
+            await sleep(settings.get('setting.delay'))
+            vars.actionPending = false
+            vars.actionCount = 0
+            actions.change(vars.lastAction)
         },
 
         scrap(event, data) {
@@ -1938,39 +1900,35 @@
             $(document).one('roa-ws:page:inventory_items', equipment.scrap2)
             click('#inventory')
         },
-        scrap2(event, data) {
+        async scrap2(event, data) {
             $(document).one('roa-ws:page:scrap_all_check', equipment.scrap3)
             click('#massScrap')
-            setTimeout(() => {
-                $("#massOption option[id='3']").attr("selected", "selected")
-                setTimeout(() => {
-                    $("#confirm_mass_scrap").click()
-                }, 500)
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            $("#massOption option[id='3']").attr("selected", "selected")
+            await sleep(500)
+            $("#confirm_mass_scrap").click()
         },
         scrap3(event, data) {
             $(document).one('roa-ws:page:scrap_all', equipment.scrap4)
             click('div#confirmButtons > a.button.green')
         },
-        scrap4(event, data) {
-            setTimeout(() => {
-                $(document).one('roa-ws:page:inventory_items', equipment.scrap5)
-                click('a.inventoryLoad[data-itemtype="armor"]')
-            }, settings.get('setting.delay'))
+        async scrap4(event, data) {
+            await sleep(settings.get('setting.delay'))
+            $(document).one('roa-ws:page:inventory_items', equipment.scrap5)
+            click('a.inventoryLoad[data-itemtype="armor"]')
         },
-        scrap5(event, data) {
+        async scrap5(event, data) {
             $(document).one('roa-ws:page:scrap_all_check', equipment.scrap6)
             click('#massScrap')
-            setTimeout(() => {
-                $("#massOption option[id='3']").attr("selected", "selected")
-                setTimeout(() => {
-                    $("#confirm_mass_scrap").click()
-                }, 500)
-            }, settings.get('setting.delay'))
+            await sleep(settings.get('setting.delay'))
+            $("#massOption option[id='3']").attr("selected", "selected")
+            await sleep(500)
+            $("#confirm_mass_scrap").click()
         },
-        scrap6(event, data) {
-            $(document).one('roa-ws:page:scrap_all', () => {
-                setTimeout(() => { equipment.finish() }, 500)
+        async scrap6(event, data) {
+            $(document).one('roa-ws:page:scrap_all', async () => {
+                await sleep(500)
+                equipment.finish()
             })
             click('div#confirmButtons > a.button.green')
         },
@@ -1998,16 +1956,9 @@
             click('a.toolUpgradeMax[data-type="' + tools.type + '"]')
         },
         upgrade3(event, data) {
-            $(document).one('roa-ws:page:harvest_level_max', tools.finish)
+            $(document).one('roa-ws:page:harvest_level_max', finish)
             click('div#confirmButtons > a.button.green')
-        },
-        finish(event, data) {
-            setTimeout(() => {
-                vars.actionPending = false
-                vars.actionCount = 0
-                $(".closeModal").click()
-            }, settings.get('setting.delay'))
-        },
+        }
     }
 
     let misc = {
@@ -2024,10 +1975,13 @@
                 $(document).one('roa-ws:page:advent_calendar_collect', misc.advent.step3)
                 click('a.advent_calendar_collect')
             },
-            step3(e, d) {
-                setTimeout(() => $('a.green').click(), 500)
-                setTimeout(() => $('#modal2Wrapper .closeModal').click(), 750)
-                setTimeout(() => $('#modalWrapper .closeModal').click(), 1500)
+            async step3(e, d) {
+                await sleep(500)
+                $('a.green').click()
+                await sleep(750)
+                $('#modal2Wrapper .closeModal').click()
+                await sleep(1500)
+                $('#modalWrapper .closeModal').click()
             }
         },
         initial_equipment: {
@@ -2050,32 +2004,31 @@
                 $(document).one('roa-ws:page:town_blacksmith', misc.initial_equipment.step3)
                 click('#loadBlacksmith')
             },
-            step3(event, data) {
+            async step3(event, data) {
                 let type = misc.initial_equipment.tools[misc.initial_equipment.index]
                 log('Initial Tools', 'Buying tool type: ' + type)
-                setTimeout(() => {
-                    let tool = $('a.tool_cost[data-type="' + type + '"]')
-                    let tier = parseInt(tool.attr('data-tier'))
-                    let canBuy = false
-                    if (tier == 0) {
-                        let total = getInt($("td.mygold").attr('data-personal'))
-                        if (total > 10000) {
-                            canBuy = true
-                        }
-                    } else {
-                        log('Initial Tools', 'Tool type: ' + type + ' already purchased')
+                await sleep(settings.get('setting.delay'))
+                let tool = $('a.tool_cost[data-type="' + type + '"]')
+                let tier = parseInt(tool.attr('data-tier'))
+                let canBuy = false
+                if (tier == 0) {
+                    let total = getInt($("td.mygold").attr('data-personal'))
+                    if (total > 10000) {
+                        canBuy = true
                     }
-                    
-                    if (canBuy) {
-                        $(document).one('roa-ws:page:buy_item', misc.initial_equipment.step4)
-                        setTimeout(() => {
-                            tool.click()
-                            setTimeout(() => $('a.green').click(), 500)
-                        }, settings.get('setting.delay'))
-                    } else {
-                        misc.initial_equipment.finish()
-                    }
-                }, settings.get('setting.delay'))
+                } else {
+                    log('Initial Tools', 'Tool type: ' + type + ' already purchased')
+                }
+                
+                if (canBuy) {
+                    $(document).one('roa-ws:page:buy_item', misc.initial_equipment.step4)
+                    await sleep(settings.get('setting.delay'))
+                    tool.click()
+                    await sleep(500)
+                    $('a.green').click()
+                } else {
+                    misc.initial_equipment.finish()
+                }
             },
             step4(event, data) {
                 if (data.hasOwnProperty('needs_confirm') && data.needs_confirm) {
@@ -2085,21 +2038,31 @@
                     misc.initial_equipment.finish()
                 }
             },
-            finish() {
-                setTimeout(() => {
-                    if (misc.initial_equipment.index >= misc.initial_equipment.tools.length - 1) {
-                        log('Initial Tools', 'All Tools bought')
-                        vars.actionPending = false
-                        vars.actionCount = 0
-                        actions.change(vars.lastAction)
-                    } else {
-                        log('Initial Tools', 'Buying next tool')
-                        misc.initial_equipment.index++
-                        misc.initial_equipment.step3()
-                    }
-                }, settings.get('setting.delay'))
+            async finish() {
+                await sleep(settings.get('setting.delay'))
+                if (misc.initial_equipment.index >= misc.initial_equipment.tools.length - 1) {
+                    log('Initial Tools', 'All Tools bought')
+                    vars.actionPending = false
+                    vars.actionCount = 0
+                    actions.change(vars.lastAction)
+                } else {
+                    log('Initial Tools', 'Buying next tool')
+                    misc.initial_equipment.index++
+                    misc.initial_equipment.step3()
+                }
             }
         }
+    }
+
+    async function sleep(time, seconds = false) {
+        return new Promise(resolve => setTimeout(resolve, (seconds ? parseInt(time) * 1000 : time)))
+    }
+
+    async function finish() {
+        await sleep(settings.get('setting.delay'))
+        vars.actionPending = false
+        vars.actionCount = 0
+        $(".closeModal").click()
     }
 
     function prepareEvents() {
@@ -2649,7 +2612,17 @@
         </div>
         <div class="row">
             <div class="col-12">
-                <pre id="spawngem_queue"></pre>
+                <table width="100%">
+                    <thead>
+                        <tr>
+                            <th>Primary Gem</th>
+                            <th>Secondary Gem</th>
+                            <th>Level / Tier</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="spawngem_queue"></tbody>
+                </table>
             </div>
         </div>
         `
@@ -3003,10 +2976,9 @@
         }
     }
 
-    function click(identifier) {
-        setTimeout(() => {
-            $(identifier).click()
-        }, settings.get('setting.delay'))
+    async function click(identifier) {
+        await sleep(settings.get('setting.delay'))
+        $(identifier).click()
     }
 
     function isNight() {
