@@ -1,3 +1,7 @@
+### V1.2.2
+    * Possibly fixed the issue with gold / armor splitting
+    * Added version number to modal title
+    
 ### V1.2.1
     * Converted to using async/await instead of nested setTimout functions
     * Cleaned up a few things that are no longer needed

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.1
+// @version      1.2.2
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -889,22 +889,22 @@
             vars.actionPending = true
 
             trainingCenter.type = type
-            trainingCenter.stage = false
+            trainingCenter.stage = 1
+
+            trainingCenter.usablePlat = getInt($('.platinum').first().attr('title')) //Math.min(getInt($('.platinum').first().attr('title')), getInt(settings.get('trainingcenter.max_plat')))
+            let gold = getInt($('.gold').first().attr('title')) //Math.min(getInt($('.platinum').first().attr('title')), getInt(settings.get('trainingcenter.max_gold')))
+
+
+
+            $('#my-fake-tc-div').attr('title', '').addClass('platinum')
+            $('#my-fake-tc-div-2').attr('title', gold / 2).addClass('gold')
             
-            $(document).one('roa-ws:page:training', trainingCenter.initialize)
+            $(document).one('roa-ws:page:training', trainingCenter.step1)
             click("#trainPage")
         },
 
-        async initialize(event, data) {
-            trainingCenter.usablePlat = getInt($('.platinum').first().attr('title')) //Math.min(getInt($('.platinum').first().attr('title')), getInt(settings.get('trainingcenter.max_plat')))
-
-            $('#my-fake-tc-div').attr('title', '').addClass('platinum')
-            trainingCenter.stage = 1
-            await sleep(settings.get('setting.delay'))
-            trainingCenter.step1()
-        },
-
         async step1() {
+            await sleep(500)
             if (trainingCenter.type != 'battle' || trainingCenter.stage == 8) {
                 $(document).one('roa-ws:page:train_skill', trainingCenter.finish)
             } else {
@@ -953,8 +953,8 @@
                 selectorInput = $($('#trainingNaturalSkills input.train_count')[0])
                 selectorButton = $($('#trainingNaturalSkills input.trainSkill')[0])
 
-                trainingCenter.maxGoldUpgrades = Math.floor(parseInt($($('#trainingNaturalSkills input.train_slider')[0]).attr('max')) * 0.79)
-                $($('#trainingNaturalSkills input.train_slider')[0]).attr('max', trainingCenter.maxGoldUpgrades)
+                // trainingCenter.maxGoldUpgrades = Math.floor(parseInt($($('#trainingNaturalSkills input.train_slider')[0]).attr('max')) * 0.79)
+                // $($('#trainingNaturalSkills input.train_slider')[0]).attr('max', trainingCenter.maxGoldUpgrades)
             }
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 2) {
                 selectorMax = $($('#trainingNaturalSkills input.max_button')[1])
@@ -962,8 +962,8 @@
                 selectorButton = $($('#trainingNaturalSkills input.trainSkill')[1])
 
                 // This tries to keep them even, but if you can only afford less armor you will still max it
-                let current = parseInt($($('#trainingNaturalSkills input.train_slider')[1]).attr('max'))
-                $($('#trainingNaturalSkills input.train_slider')[1]).attr('max', Math.min(current, trainingCenter.maxGoldUpgrades))
+                // let current = parseInt($($('#trainingNaturalSkills input.train_slider')[1]).attr('max'))
+                // $($('#trainingNaturalSkills input.train_slider')[1]).attr('max', Math.min(current, trainingCenter.maxGoldUpgrades))
             }
 
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 3) {
@@ -1036,6 +1036,7 @@
 
         finish() {
             $('#my-fake-tc-div').attr('title', '').removeClass('platinum')
+            $('#my-fake-tc-div-2').attr('title', '').removeClass('gold')
             finish()
         },
 
@@ -2073,7 +2074,7 @@
         })
 
         $('#bot-control-panel').click(event => {
-            $('#modalTitle').text('Betabot controls')
+            $('#modalTitle').text(`Betabot controls - Version: ${GM_info.script.version}`)
             $('#modalWrapper, #modalBackground, #bot-wrapper').show()
         })
 
@@ -2869,7 +2870,7 @@
             <button class="change-farm-mob" data-value="-550">-50</button>`)
             .insertBefore('#autoSelectEnemy')
 
-        $('body').prepend('<span id="my-fake-tc-div"></span>')
+        $('body').prepend('<span id="my-fake-tc-div"></span><span id="my-fake-tc-div-2"></span>')
 
         settings.debug()
     }
