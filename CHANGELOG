@@ -1,7 +1,7 @@
-### V1.2.2
+### V1.2.3
     * Added toggle for debug mode in settings screen
     * Added buy stamina command, buys up to 1k stamina when sent
-    
+
 ### V1.2.2
     * Possibly fixed the issue with gold / armor splitting
     * Added version number to modal title
