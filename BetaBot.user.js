@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.2
+// @version      1.2.3
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -103,7 +103,8 @@
                 min_resources: '500000',
                 default_ts: 'fishing',
                 mob_count: '500',
-                mobs_to_move: '1'
+                mobs_to_move: '1',
+                debug: false,
             },
             readonly: {
                 alt_room_id: 0,
@@ -287,6 +288,10 @@
 
                 case 'build_one':
                     housing.build()
+                    break;
+
+                case 'buy_stamina':
+                    crystalBoosts.buyStamina()
                     break;
 
                 case 'switch_action':
@@ -1056,6 +1061,27 @@
             $('#training-center-ratio-message').html(`<span style="color: #42db18">Valid ratio</span>`)
             return true
             //
+        }
+    }
+
+    let crystalBoosts = {
+        buyStamina() {
+            vars.actionPending = true
+            $(document).one('roa-ws:page:boosts', crystalBoosts.buyStamina2)
+            click("li#premiumShop")
+        },
+
+        async buyStamina2(e, d) {
+            await sleep(settings.get('setting.delay'))
+            $(document).one('roa-ws:page:boost_purchase_stamina', finish)
+            $('#max_button_autos').click()
+            await sleep(250)
+            let t = parseInt($('#autos_to_buy').val())
+            if (t > 1000) {
+                $('#autos_to_buy').val('1000')
+            }
+            await sleep(250)
+            $('#increaseAutos').click()
         }
     }
 
@@ -2478,6 +2504,14 @@
                 <input type="text" class="form-control bot-option" data-type="setting" data-key="mobs_to_move" />
             </div>
         </div>
+        <div class="row">
+            <div class="col-xs-3">Debug Mode</div>
+            <div class="col-xs-3">
+                <label class="switch">
+                    <input type="checkbox" class="bot-option" data-type="setting" data-key="debug"><span class="roundedslider"></span>
+                </label>
+            </div>
+        </div>
         `
 
         let templateOverrides = `
@@ -2667,6 +2701,7 @@
                     <li class="bot-command" data-command="initial_tools"><a href="#">Buy Initial Tool Levels</a></li>
                     <li class="bot-command" data-command="scrap"><a href="#">Scrap crap</a></li>
                     <li class="bot-command" data-command="disposal"><a href="#">Set Garbage Disposal</a></li>                    
+                    <li class="bot-command" data-command="buy_stamina"><a href="#">Buy Stamina</a></li>                    
                 </ul>
             </div>
             <div class="btn-group">
@@ -2960,7 +2995,7 @@
 
         if (type === true) {
             type = 'Debug'
-            if (!vars.debug) return
+            if (!settings.get('setting.debug')) return
         }
 
         logs.push({
