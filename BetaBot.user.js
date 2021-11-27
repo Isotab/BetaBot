@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.3
+// @version      1.2.4
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -18,8 +18,6 @@
     * Polish up list for gem spawning (WIP)
     * Write mass wire based upon the pattern ${settings.alt_basename}${romanize(x)}
     * Add some in game information on what each setting does
-    * Fix whatever is wrong with the gold tc split, it should work though :(
-    * Make TC retry if you try to do more than 100k at a time
     * 
 */
 
@@ -858,6 +856,7 @@
         usablePlat: 0,
         maxGoldUpgrades: 0,
         maxUpgradesAtOnce: 100000,
+        retrying: false,
 
         switch(to) {
             if (!trainingCenter.validateSettings())
@@ -869,9 +868,10 @@
             
         },
 
-        resetWatch(e, d) {
+        async resetWatch(e, d) {
             if (d.m.includes("You refunded your Training Center investment")) {
                 $(document).off('roa-ws:notification', trainingCenter.resetWatch)
+                await sleep(500)
                 trainingCenter.train(trainingCenter.type)
             }
         },
@@ -900,7 +900,6 @@
             let gold = getInt($('.gold').first().attr('title')) //Math.min(getInt($('.platinum').first().attr('title')), getInt(settings.get('trainingcenter.max_gold')))
 
 
-
             $('#my-fake-tc-div').attr('title', '').addClass('platinum')
             $('#my-fake-tc-div-2').attr('title', gold / 2).addClass('gold')
             
@@ -908,17 +907,17 @@
             click("#trainPage")
         },
 
-        async step1() {
+        async step1(e, d) {
+            let oldUsablePlat = parseInt($('#my-fake-tc-div').attr('title'))
             await sleep(500)
-            if (trainingCenter.type != 'battle' || trainingCenter.stage == 8) {
-                $(document).one('roa-ws:page:train_skill', trainingCenter.finish)
-            } else {
-                $(document).one('roa-ws:page:train_skill', trainingCenter.step1)
-            }
-
             $('#my-fake-tc-div').attr('title', trainingCenter.usablePlat)
 
             let selectorMax, selectorInput, selectorButton
+
+            if (trainingCenter.retrying) {
+                let m = getInt(d.m.match('of(.*)platinum')[1].trim())
+                $('#my-fake-tc-div').attr('title', oldUsablePlat - m)
+            }
 
             if (trainingCenter.type == 'crafting') {
                 selectorMax = $($('#trainingHarvestingSkills input.max_button')[4])
@@ -957,18 +956,11 @@
                 selectorMax = $($('#trainingNaturalSkills input.max_button')[0])
                 selectorInput = $($('#trainingNaturalSkills input.train_count')[0])
                 selectorButton = $($('#trainingNaturalSkills input.trainSkill')[0])
-
-                // trainingCenter.maxGoldUpgrades = Math.floor(parseInt($($('#trainingNaturalSkills input.train_slider')[0]).attr('max')) * 0.79)
-                // $($('#trainingNaturalSkills input.train_slider')[0]).attr('max', trainingCenter.maxGoldUpgrades)
             }
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 2) {
                 selectorMax = $($('#trainingNaturalSkills input.max_button')[1])
                 selectorInput = $($('#trainingNaturalSkills input.train_count')[1])
                 selectorButton = $($('#trainingNaturalSkills input.trainSkill')[1])
-
-                // This tries to keep them even, but if you can only afford less armor you will still max it
-                // let current = parseInt($($('#trainingNaturalSkills input.train_slider')[1]).attr('max'))
-                // $($('#trainingNaturalSkills input.train_slider')[1]).attr('max', Math.min(current, trainingCenter.maxGoldUpgrades))
             }
 
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 3) {
@@ -976,54 +968,60 @@
                 selectorInput = $($('#trainingBattleSkills input.train_count')[0])
                 selectorButton = $($('#trainingBattleSkills input.trainSkill')[0])
 
-                let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_ms')))
-                $('#my-fake-tc-div').attr('title', plat)
+                if (!trainingCenter.retrying) {
+                    let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_ms')))
+                    $('#my-fake-tc-div').attr('title', plat)
+                }
             }
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 4) {
                 selectorMax = $($('#trainingBattleSkills input.max_button')[1])
                 selectorInput = $($('#trainingBattleSkills input.train_count')[1])
                 selectorButton = $($('#trainingBattleSkills input.trainSkill')[1])
 
-                let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_chc')))
-                $('#my-fake-tc-div').attr('title', plat)
+                if (!trainingCenter.retrying) {
+                    let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_chc')))
+                    $('#my-fake-tc-div').attr('title', plat)
+                }
             }
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 5) {
                 selectorMax = $($('#trainingBattleSkills input.max_button')[2])
                 selectorInput = $($('#trainingBattleSkills input.train_count')[2])
                 selectorButton = $($('#trainingBattleSkills input.trainSkill')[2])
 
-                let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_chd')))
-                $('#my-fake-tc-div').attr('title', plat)
+                if (!trainingCenter.retrying) {
+                    let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_chd')))
+                    $('#my-fake-tc-div').attr('title', plat)
+                }
             }
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 6) {
                 selectorMax = $($('#trainingBattleSkills input.max_button')[3])
                 selectorInput = $($('#trainingBattleSkills input.train_count')[3])
                 selectorButton = $($('#trainingBattleSkills input.trainSkill')[3])
 
-                let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_tou')))
-                $('#my-fake-tc-div').attr('title', plat)
+                if (!trainingCenter.retrying) {
+                    let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_tou')))
+                    $('#my-fake-tc-div').attr('title', plat)
+                }
             }
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 7) {
                 selectorMax = $($('#trainingBattleSkills input.max_button')[4])
                 selectorInput = $($('#trainingBattleSkills input.train_count')[4])
                 selectorButton = $($('#trainingBattleSkills input.trainSkill')[4])
 
-                let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_cad')))
-                $('#my-fake-tc-div').attr('title', plat)
+                if (!trainingCenter.retrying) {
+                    let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_cad')))
+                    $('#my-fake-tc-div').attr('title', plat)
+                }
             }
             if (trainingCenter.type == 'battle' && trainingCenter.stage == 8) {
                 selectorMax = $($('#trainingBattleSkills input.max_button')[5])
                 selectorInput = $($('#trainingBattleSkills input.train_count')[5])
                 selectorButton = $($('#trainingBattleSkills input.trainSkill')[5])
 
-                let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_hb')))
-                $('#my-fake-tc-div').attr('title', plat)
-            }
-
-            if (trainingCenter.type == 'battle') {
-                trainingCenter.stage++
-                if (trainingCenter.stage % 2 == 0)
-                    vars.actionCount = 0 // This should take a while so I need to reset this to keep the bot from thinking it got borked
+                if (!trainingCenter.retrying) {
+                    let plat = Math.floor(trainingCenter.usablePlat * parseFloat(settings.get('trainingcenter.percent_hb')))
+                    $('#my-fake-tc-div').attr('title', plat)
+                }
             }
 
             selectorMax.click()
@@ -1032,10 +1030,25 @@
             let int = parseInt(selectorInput.val())
             if (int > trainingCenter.maxUpgradesAtOnce) {
                 selectorInput.val(trainingCenter.maxUpgradesAtOnce)
+                trainingCenter.retrying = true
+            } else {
+                trainingCenter.retrying = false
             }
-            setTimeout(() =>{
-                selectorButton.click()
-            }, 200)
+
+            if ((trainingCenter.type != 'battle' || trainingCenter.stage == 8) && !trainingCenter.retrying) {
+                $(document).one('roa-ws:page:train_skill', trainingCenter.finish)
+            } else {
+                $(document).one('roa-ws:page:train_skill', trainingCenter.step1)
+            }
+
+            if (trainingCenter.type == 'battle' && !trainingCenter.retrying) {
+                trainingCenter.stage++
+                if (trainingCenter.stage % 2 == 0)
+                    vars.actionCount = 0 // This should take a while so I need to reset this to keep the bot from thinking it got borked
+            }
+
+            await sleep(200)
+            selectorButton.click()
 
         },
 

@@ -1,3 +1,6 @@
+### V1.2.4
+    * Added the ability to train beyond the 100k limit for TC, it will now retry as many times as needed to use up all your plat
+
 ### V1.2.3
     * Added toggle for debug mode in settings screen
     * Added buy stamina command, buys up to 1k stamina when sent
