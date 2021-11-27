@@ -1,3 +1,6 @@
+### V1.2.5
+    * Added delay back into crafting queue to fix it, must have lost that in the async switch
+
 ### V1.2.4
     * Added the ability to train beyond the 100k limit for TC, it will now retry as many times as needed to use up all your plat
 

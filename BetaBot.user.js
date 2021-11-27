@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.4
+// @version      1.2.5
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -1411,6 +1411,7 @@
         },
         async addFromQueue_2(event, data) {
             $(document).one('roa-ws:page:craft_item', finish)
+            await sleep(100)
             let item = crafting.queue.shift()
             $("#craftingItemLevel").val(item.level)
             $("#craftingQuality").val('7')
