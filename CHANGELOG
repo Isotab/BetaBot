@@ -1,3 +1,6 @@
+### V1.2.6
+    * Adjusted delays for crafting. Made them a bit too quick and options were not switching properly
+    
 ### V1.2.5
     * Added delay back into crafting queue to fix it, must have lost that in the async switch
 

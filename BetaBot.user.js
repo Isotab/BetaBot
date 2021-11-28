@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.5
+// @version      1.2.6
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -18,7 +18,7 @@
     * Polish up list for gem spawning (WIP)
     * Write mass wire based upon the pattern ${settings.alt_basename}${romanize(x)}
     * Add some in game information on what each setting does
-    * 
+    *
 */
 
 (async function($) {
@@ -335,12 +335,12 @@
                 case 'advent_calendar':
                     misc.advent.start()
                     break;
-                
+
                 case 'initial_tools':
                     log(true, 'Buy tools command')
                     misc.initial_equipment.start()
                     break;
-                
+
                 case 'scrap':
                     log(true, 'Scrap all')
                     equipment.scrap()
@@ -391,7 +391,7 @@
                 case 'stonecutting':
                     $('a.loadHarvesting[data-resource="stone"]').click()
                     break;
-                
+
                 case 'crafting':
                     crafting.start()
                     break;
@@ -422,7 +422,7 @@
                 case 'stonecutting':
                     $('a.bossHarvest[data-res="stone"]').click()
                     break;
-                
+
                 case 'crafting':
                     $('a.bossCraft').click()
                     break;
@@ -575,7 +575,7 @@
             /* If we have enough battles and there is no current battle quest do the logic for moving */
             // if (total > parseInt(settings.get('setting.mob_count')) && d.results.p.bq_info2.a == 1) {
             if (total > parseInt(settings.get('setting.mob_count')) && $('#bq_info').text().includes('You don\'t currently have a battle quest.')) {
-                
+
                 if (!settings.get('control.mob_control') || (settings.get('control.mob_control_locket') && isNight())) {
                     mob_control.reset()
                     if (settings.get('control.quest')) {
@@ -865,7 +865,7 @@
             $(document).on('roa-ws:notification', trainingCenter.resetWatch)
             trainingCenter.type = to
             setTimeout(() => trainingCenter.reset(), 250)
-            
+
         },
 
         async resetWatch(e, d) {
@@ -902,7 +902,7 @@
 
             $('#my-fake-tc-div').attr('title', '').addClass('platinum')
             $('#my-fake-tc-div-2').attr('title', gold / 2).addClass('gold')
-            
+
             $(document).one('roa-ws:page:training', trainingCenter.step1)
             click("#trainPage")
         },
@@ -1159,7 +1159,7 @@
                             qb = parseInt(data.bonuses["Crystal Shop"][64].split(" ", 1)[0].replace('+', '').replace('%', ''))
                             apen = parseFloat(data.bonuses.Miscellaneous[97].split(" ", 1)[0].replace('+', '').replace('%', ''))
                         } catch(e) {}
-                        
+
                         // if (fhc < 50) {
                         //     accepted.push("First Hit Chance")
                         // }
@@ -1181,7 +1181,7 @@
                         if (apen < 50) {
                             accepted.push('Armor Penetration')
                         }
-                        
+
                         let firstBonus = first.find('span').text()
                         if (!accepted.some(v => firstBonus.includes(v))) {
                             $(document).one('roa-ws:page:house_ignore_build', housing.ignore)
@@ -1233,7 +1233,7 @@
                 vars.actionPending = false
                 vars.actionCount = 0
             }, 6000)
-            
+
             $(".closeModal").click()
         },
 
@@ -1411,16 +1411,16 @@
         },
         async addFromQueue_2(event, data) {
             $(document).one('roa-ws:page:craft_item', finish)
-            await sleep(100)
+            await sleep(settings.get('setting.delay'))
             let item = crafting.queue.shift()
             $("#craftingItemLevel").val(item.level)
             $("#craftingQuality").val('7')
             $("#craftingType").val(item.type)
             $("#houseCraftingVetoList").multiSelect('select_all')
 
-            await sleep(100)
+            await sleep(200)
             $("#houseCraftingVetoList").multiSelect('deselect', item.filters)
-            await sleep(100)
+            await sleep(200)
             click('.craftingJobStartQueue[data-position="back"]')
         },
     }
@@ -1486,7 +1486,7 @@
             {name: 'Damage to Plants', value: 28},
             {name: 'Chrono', value: 62}
         ],
-        
+
         addToQueue(primary, secondary, level, amount) {
             spawngem.queue.push({
                 primary,
@@ -1509,9 +1509,9 @@
         async create_2(e, d) {
             let gem = spawngem.queue.shift()
             $(document).one('roa-ws:page:gem_spawn', spawngem.create_3)
-            
+
             await sleep(settings.get('setting.delay'))
-            
+
             $('#spawnGemLevel').val(gem.level)
             $('#gemSpawnType').val(gem.primary)
             $('#gemSpawnSpliceType').val(gem.secondary)
@@ -1667,7 +1667,7 @@
                     actions.change(settings.get('setting.default_ts'))
                 }
             }
-            
+
             /* Quest Finish */
             if (data.type === 'battle' && $('#bq_info').text().includes('You have completed your')) {
                 quest.stop('battle')
@@ -1795,26 +1795,26 @@
             let cost = newKey * 25
 
             let level, toolType, levelRequired
-            
+
             switch(data.type) {
                 case 'craft':
                     level = getInt($('td#crafting').text())
                     toolType = 'crafting'
                     levelRequired = newKey * 10
                     break;
-                
+
                 case 'carve':
                     level = getInt($('td#carving').text())
                     toolType = 'carving'
                     levelRequired = newKey * 10
                     break;
-                
+
                 case 'harvest':
                     level = getInt($('td#' + data.results.a.s).text())
                     toolType = data.results.a.r
                     levelRequired = newKey * 50
                     break;
-                
+
                 default:
                     return false
                     break;
@@ -1910,7 +1910,7 @@
             if (getCurrency('gold') < 22000000) {
                 canBuy = false
             }
-            
+
             if (canBuy) {
                 $(document).one('roa-ws:page:buy_item', equipment.buyToolTier4)
                 await sleep(settings.get('setting.delay'))
@@ -2060,7 +2060,7 @@
                 } else {
                     log('Initial Tools', 'Tool type: ' + type + ' already purchased')
                 }
-                
+
                 if (canBuy) {
                     $(document).one('roa-ws:page:buy_item', misc.initial_equipment.step4)
                     await sleep(settings.get('setting.delay'))
@@ -2193,7 +2193,7 @@
             let secondary = $('#spawngem_secondary').val()
             let level = parseInt($('#spawngem_level').val()) / 10
             let amount = parseInt($('#spawngem_amount').val())
-            
+
             spawngem.addToQueue(primary, secondary, level, amount)
 
             $('#spawngem_primary').val('-1')
@@ -2223,7 +2223,7 @@
         $(document).on('click', '.change-farm-mob', function() {
             let a = parseInt($(this).attr('data-value'))
             let b = parseInt($('#autoSelectEnemy').val())
-        
+
             $('#autoSelectEnemy').val(a + b)
         })
 
@@ -2714,8 +2714,8 @@
                     <li class="bot-command" data-command="advent_calendar"><a href="#">Advent Calendar</a></li>
                     <li class="bot-command" data-command="initial_tools"><a href="#">Buy Initial Tool Levels</a></li>
                     <li class="bot-command" data-command="scrap"><a href="#">Scrap crap</a></li>
-                    <li class="bot-command" data-command="disposal"><a href="#">Set Garbage Disposal</a></li>                    
-                    <li class="bot-command" data-command="buy_stamina"><a href="#">Buy Stamina</a></li>                    
+                    <li class="bot-command" data-command="disposal"><a href="#">Set Garbage Disposal</a></li>
+                    <li class="bot-command" data-command="buy_stamina"><a href="#">Buy Stamina</a></li>
                 </ul>
             </div>
             <div class="btn-group">
@@ -2836,7 +2836,7 @@
         `
 
         let templateLog = `
-        
+
         `
 
         let templateImportExport = `
@@ -2958,7 +2958,7 @@
                    "","I","II","III","IV","V","VI","VII","VIII","IX"],
             roman = "",
             i = 3
-            
+
         while (i--)
             roman = (key[+digits.pop() + (i * 10)] || "") + roman
 
