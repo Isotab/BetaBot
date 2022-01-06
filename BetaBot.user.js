@@ -209,62 +209,62 @@
                     if (parts[2] == vars.username) break
 
                     items = parts[3].split(',')
-                    let command = []
+                    let commandParts = []
 
                     if (items.includes('crystals')) {
                         let total = parseInt($("td.mypremium").attr('data-personal').replace(/,/g, ''))
                         let min = parseInt(settings.get('setting.min_crystals'))
                         if (total > min) {
-                            command.push((total - min) + ' crystals')
+                            commandParts.push((total - min) + ' crystals')
                         }
                     }
                     if (items.includes('platinum')) {
                         let total = parseInt($("td.myplatinum").attr('data-personal').replace(/,/g, ''))
-                        command.push(total + ' platinum')
+                        commandParts.push(total + ' platinum')
                     }
                     if (items.includes('gold')) {
                         let total = parseInt($("td.mygold").attr('data-personal').replace(/,/g, ''))
-                        command.push(total + ' gold')
+                        commandParts.push(total + ' gold')
                     }
                     if (items.includes('gem_fragments')) {
                         let total = parseInt($("td.mygem_fragments").attr('data-personal').replace(/,/g, ''))
-                        command.push(total + ' gem_fragments')
+                        commandParts.push(total + ' gem_fragments')
                     }
                     if (items.includes('crafting_materials')) {
                         let total = parseInt($("td.mycrafting_materials").attr('data-personal').replace(/,/g, ''))
-                        command.push(total + ' crafting_materials')
+                        commandParts.push(total + ' crafting_materials')
                     }
                     if (items.includes('food')) {
                         let total = parseInt($("td.myfood").attr('data-personal').replace(/,/g, ''))
                         let min = parseInt(settings.get('setting.min_resources'))
                         if (total > min) {
-                            command.push((total - min) + ' food')
+                            commandParts.push((total - min) + ' food')
                         }
                     }
                     if (items.includes('wood')) {
                         let total = parseInt($("td.mywood").attr('data-personal').replace(/,/g, ''))
                         let min = parseInt(settings.get('setting.min_resources'))
                         if (total > min) {
-                            command.push((total - min) + ' wood')
+                            commandParts.push((total - min) + ' wood')
                         }
                     }
                     if (items.includes('iron')) {
                         let total = parseInt($("td.myiron").attr('data-personal').replace(/,/g, ''))
                         let min = parseInt(settings.get('setting.min_resources'))
                         if (total > min) {
-                            command.push((total - min) + ' iron')
+                            commandParts.push((total - min) + ' iron')
                         }
                     }
                     if (items.includes('stone')) {
                         let total = parseInt($("td.mystone").attr('data-personal').replace(/,/g, ''))
                         let min = parseInt(settings.get('setting.min_resources'))
                         if (total > min) {
-                            command.push((total - min) + ' stone')
+                            commandParts.push((total - min) + ' stone')
                         }
                     }
 
-                    if (command.length > 0) {
-                        chat.sendAny('/wire ' + parts[2] + ' ' + command.join(', '))
+                    if (commandParts.length > 0) {
+                        chat.sendAny('/wire ' + parts[2] + ' ' + commandParts.join(', '))
                     }
                     break;
 
