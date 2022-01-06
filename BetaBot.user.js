@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.6
+// @version      1.2.8
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -209,7 +209,7 @@
                     if (parts[2] == vars.username) break
 
                     items = parts[3].split(',')
-                    command = []
+                    let command = []
 
                     if (items.includes('crystals')) {
                         let total = parseInt($("td.mypremium").attr('data-personal').replace(/,/g, ''))
@@ -2009,14 +2009,17 @@
                 click('#eventCalendarLink')
             },
             step1(e, d) {
+                $("#modal2Content").append(`<a class="advent_calendar_collect thingylink">herro</a>`)
+                
                 $(document).one('roa-ws:page:event_view', misc.advent.step2)
-                click('td.current-day a.event_view')
+                click('.thingylink')
             },
             step2(e, d) {
                 $(document).one('roa-ws:page:advent_calendar_collect', misc.advent.step3)
                 click('a.advent_calendar_collect')
             },
             async step3(e, d) {
+                $('.thingylink').remove()
                 await sleep(500)
                 $('a.green').click()
                 await sleep(750)

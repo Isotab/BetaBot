@@ -1,3 +1,9 @@
+### V1.2.8
+    * Fixed a goof in the send currency command
+
+### V1.2.7
+    * Create advent calendar link when it is not present on the calendar
+
 ### V1.2.6
     * Adjusted delays for crafting. Made them a bit too quick and options were not switching properly
     
