@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.9
+// @version      1.2.10
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -2913,7 +2913,9 @@
         $(`<button class="change-farm-mob" data-value="55">+5</button>
             <button class="change-farm-mob" data-value="110">+10</button>
             <button class="change-farm-mob" data-value="165">+15</button>
-            <button class="change-farm-mob" data-value="550">+50</button>`)
+            <button class="change-farm-mob" data-value="550">+50</button>
+            <button class="change-farm-mob" data-value="1100">+100</button>
+            <button class="change-farm-mob" data-value="2750">+250</button>`)
             .insertAfter('#autoSelectEnemy')
 
         $(`<button class="change-farm-mob" data-value="-55">-5</button>
