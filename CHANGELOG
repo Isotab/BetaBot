@@ -1,3 +1,9 @@
+### V1.2.12
+    * Removed fallback option setting since it is no longer used
+    * Fixed toggle for switching to battle
+    * Moved some things around in commands
+    * Added command button for the event channel
+
 ### V1.2.11
     * Removed max carving from event logic and settings
     * Added setting to toggle switching to battle for last 2/3 minutes of event

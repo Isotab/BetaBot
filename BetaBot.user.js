@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.11
+// @version      1.2.12
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -443,6 +443,19 @@
         async sendAltChannel(string) {
             let old = $("#chatChannel :selected").val()
             let custom = $('#chatChannel #channel' + settings.get('setting.bot_channel_name')).val()
+
+            $("#chatChannel").val(custom).change()
+
+            $("#chatMessage").html(string)
+            $("#chatSendMessage").click()
+
+            await sleep(500)
+            $("#chatChannel").val(old).change()
+        },
+
+        async sendEventChannel(string) {
+            let old = $("#chatChannel :selected").val()
+            let custom = $('#chatChannel #channel' + settings.get('setting.event_channel_name')).val()
 
             $("#chatChannel").val(custom).change()
 
@@ -2139,10 +2152,14 @@
         $(document).on('click', '.bot-command', function(event) {
             let command = $(this).attr('data-command')
             if (command == 'send_ingredients') {
-                //command = command + '|' + settings.get('setting.main_username')
-                command = command + '|batsarmyii'
+                command = command + '|' + settings.get('setting.main_username')
+                // command = command + '|batsarmyii'
             }
-            chat.sendAltChannel('command|' + command)
+
+            if (command == 'army_event')
+                chat.sendEventChannel('InitEvent')
+            else 
+                chat.sendAltChannel('command|' + command)
         })
 
         $(document).on('click', '.tc-switch', function(event) {
@@ -2395,23 +2412,11 @@
                     <option value="carving">Carving</option>
                 </select>
             </div>
-            <div class="col-xs-3">Fallback Action</div>
-            <div class="col-xs-3">
-                <select class="form-control bot-option" data-type="event" data-key="fallback_action">
-                    <option value="battle">Battle</option>
-                    <option value="fishing">Fishing</option>
-                    <option value="woodcutting">Woodcutting</option>
-                    <option value="mining">Mining</option>
-                    <option value="stonecutting">Stonecutting</option>
-                    <option value="ts">Default TS</option>
-                    <option value="crafting">Crafting</option>
-                </select>
-            </div>
-        </div>
-        <div class="row">
             <div class="col-xs-3">Switch to battle at end of event</div>
             <div class="col-xs-3">
-                <input type="checkbox" class="form-control bot-option" data-type="event" data-key="switch_to_battle"><span class="roundedslider"></span>
+                <label class="switch">
+                    <input type="checkbox" class="form-control bot-option" data-type="event" data-key="switch_to_battle"><span class="roundedslider"></span>
+                </label>
             </div>
         </div>
         `
@@ -2682,7 +2687,6 @@
         <h4>Sends Commands for alts</h4>
         <div class="btn-group">
             <button class="btn btn-primary bot-command" data-command="build_one">Build Once</button>
-            <button class="btn btn-primary bot-command" data-command="toggle_timers">Toggle Timers</button>
             <div class="btn-group">
                 <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">Switch Action <span class="caret"></span></button>
                 <ul class="dropdown-menu">
@@ -2718,6 +2722,7 @@
                     <li class="bot-command" data-command="scrap"><a href="#">Scrap crap</a></li>
                     <li class="bot-command" data-command="disposal"><a href="#">Set Garbage Disposal</a></li>
                     <li class="bot-command" data-command="buy_stamina"><a href="#">Buy Stamina</a></li>
+                    <li class="bot-command" data-command="toggle_timers"><a href="#">Toggle Timers</a></li>
                 </ul>
             </div>
             <div class="btn-group">
@@ -2740,6 +2745,7 @@
                 </ul>
             </div>
             <button class="btn btn-primary bot-command" data-command="send_ingredients">Send Ingredients</button>
+            <button class="btn btn-primary bot-command" data-command="army_event">Army Event</button>
         </div>
         `
 
