@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.10
+// @version      1.2.11
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -74,7 +74,8 @@
                 base_action: 'carving',
                 fallback_action: 'battle',
                 max_carving: '2000',
-                join_time: '15'
+                join_time: '15',
+                switch_to_battle: false,
             },
             trainingcenter: {
                 max_gold: '5000000000000',
@@ -1859,20 +1860,18 @@
                 currentAction = 'battle'
             }
 
-            if (currentAction === 'carving' && data.results.carvingTier >= settings.get('event.max_carving')) {
-                let newAction = settings.get('event.fallback_action') == 'ts' ? settings.get('setting.default_ts') : settings.get('event.fallback_action')
-                actions.changeEvent(newAction)
-            }
+            // if (currentAction === 'carving' && data.results.carvingTier >= settings.get('event.max_carving')) {
+            //     let newAction = settings.get('event.fallback_action') == 'ts' ? settings.get('setting.default_ts') : settings.get('event.fallback_action')
+            //     actions.changeEvent(newAction)
+            // }
 
             let minutesToBattle = vars.isAlt ? 2 : 3
 
-            // if (!vars.isAlt) {
-                let eventTimeLeft = data.results.p.event_end || null
-                if (eventTimeLeft !== null && eventTimeLeft <= (minutesToBattle * 60) && currentAction != 'battle') {
-                    actions.changeEvent('battle')
-                    return
-                }
-            // }
+            let eventTimeLeft = data.results.p.event_end || null
+            if (settings.get('event.switch_to_battle') && (eventTimeLeft !== null && eventTimeLeft <= (minutesToBattle * 60) && currentAction != 'battle')) {
+                actions.changeEvent('battle')
+                return
+            }
         }
     }
 
@@ -2410,9 +2409,9 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-xs-3">Max Carving</div>
+            <div class="col-xs-3">Switch to battle at end of event</div>
             <div class="col-xs-3">
-                <input type="text" class="form-control bot-option" data-type="event" data-key="max_carving" />
+                <input type="checkbox" class="form-control bot-option" data-type="event" data-key="switch_to_battle"><span class="roundedslider"></span>
             </div>
         </div>
         `

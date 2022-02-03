@@ -1,3 +1,7 @@
+### V1.2.11
+    * Removed max carving from event logic and settings
+    * Added setting to toggle switching to battle for last 2/3 minutes of event
+
 ### V1.2.10
     * Added +100 and +250 to farm mob quick links
 
