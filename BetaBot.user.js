@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.12
+// @version      1.2.13
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -1501,6 +1501,111 @@
             {name: 'Chrono', value: 62}
         ],
 
+        presents: {
+            Split: function(level) {
+                return [
+                    {
+                        primary: 28,
+                        secondary: 2,
+                        level: level,
+                        amount: 2
+                    },
+                    {
+                        primary: 51,
+                        secondary: 2,
+                        level: level,
+                        amount: 2
+                    },
+                    ...spawngem.presents.Base(level)
+                ]
+            },
+            Damage: function(level) {
+                return [
+                    {
+                        primary: 28,
+                        secondary: 2,
+                        level: level,
+                        amount: 4
+                    },
+                    ...spawngem.presents.Base(level)
+                ]
+            },
+            Gold: function(level) {
+                return [
+                    {
+                        primary: 51,
+                        secondary: 2,
+                        level: level,
+                        amount: 4
+                    },
+                    ...spawngem.presents.Base(level)
+                ]
+            },
+            Both: function(level) {
+                return [
+                    {
+                        primary: 28,
+                        secondary: 2,
+                        level: level,
+                        amount: 4
+                    },
+                    {
+                        primary: 51,
+                        secondary: 2,
+                        level: level,
+                        amount: 4
+                    },
+                    ...spawngem.presents.Base(level)
+                ]
+            },
+            Base: function(level) {
+                return [
+                    {
+                        primary: 50,
+                        secondary: 0,
+                        level: level,
+                        amount: 5
+                    },
+                    {
+                        primary: 52,
+                        secondary: 2,
+                        level: level,
+                        amount: 5
+                    },
+                    {
+                        primary: 53,
+                        secondary: 1,
+                        level: level,
+                        amount: 5
+                    },
+                    {
+                        primary: 1,
+                        secondary: 0,
+                        level: level,
+                        amount: 5
+                    },
+                    {
+                        primary: 0,
+                        secondary: 1,
+                        level: level,
+                        amount: 4
+                    },
+                    {
+                        primary: 0,
+                        secondary: 62,
+                        level: level,
+                        amount: 5
+                    },
+                    {
+                        primary: 2,
+                        secondary: 61,
+                        level: level,
+                        amount: 1
+                    },
+                ]
+            }
+        },
+
         addToQueue(primary, secondary, level, amount) {
             spawngem.queue.push({
                 primary,
@@ -1508,6 +1613,19 @@
                 level,
                 amount
             })
+            spawngem.updateQueueDisplay()
+        },
+
+        addPresetToQueue(present) {
+            if (vars.canSpawnGem) {
+                vars.canSpawnGem = false
+                setTimeout(() => vars.canSpawnGem = true, 2500)
+            }
+
+            present.forEach(item => {
+                spawngem.addToQueue(item.primary, item.secondary, item.level / 10, item.amount)
+            })
+
             spawngem.updateQueueDisplay()
         },
 

@@ -1,4 +1,7 @@
 ### V1.2.12
+    * Starting adding the ability to use gem presents. Still manual from console like gear for now
+
+### V1.2.12
     * Removed fallback option setting since it is no longer used
     * Fixed toggle for switching to battle
     * Moved some things around in commands
