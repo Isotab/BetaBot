@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.13
+// @version      1.2.14
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -67,7 +67,8 @@
                 mob_control_locket: false,
                 upgrade_tool_level: false,
                 upgrade_tool_tier: false,
-                max_level: '150000'
+                max_level: '150000',
+                spawngems: true,
             },
             event: {
                 join: false,
@@ -1594,7 +1595,7 @@
                         primary: 0,
                         secondary: 62,
                         level: level,
-                        amount: 5
+                        amount: 1
                     },
                     {
                         primary: 2,
@@ -1839,7 +1840,7 @@
                 harvestron.start()
             }
 
-           if (spawngem.queue.length > 0 && vars.canSpawnGem) {
+           if (spawngem.queue.length > 0 && vars.canSpawnGem && settings.get('control.spawngems')) {
                spawngem.create()
            }
 
@@ -2780,8 +2781,14 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-12">
+            <div class="col-xs-6">
                 <button class="btn btn-success" id="spawngem_submit">Add To Queue</button>
+            </div>
+            <div class="col-xs-3">Enable Gem Spawner</div>
+            <div class="col-xs-3">
+                <label class="switch">
+                    <input type="checkbox" class="bot-option" data-type="control" data-key="spawngem"><span class="roundedslider"></span>
+                </label>
             </div>
         </div>
         <div class="row">

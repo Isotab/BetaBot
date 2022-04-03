@@ -1,4 +1,7 @@
-### V1.2.12
+### V1.2.14
+    * Added control for enabling/disabling gem spawning
+    
+### V1.2.13
     * Starting adding the ability to use gem presents. Still manual from console like gear for now
 
 ### V1.2.12
