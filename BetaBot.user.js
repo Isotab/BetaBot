@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.15
+// @version      1.2.16
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -3167,7 +3167,7 @@
     }
 
     function isNight() {
-        let hour = moment().tz('America/New_York').get('hour')
+        let hour = moment().tz('Atlantic/Reykjavik').get('hour')
         return (hour >= 20 || hour <= 5)
     }
 
