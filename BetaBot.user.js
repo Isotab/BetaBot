@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.14
+// @version      1.2.15
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -2787,7 +2787,7 @@
             <div class="col-xs-3">Enable Gem Spawner</div>
             <div class="col-xs-3">
                 <label class="switch">
-                    <input type="checkbox" class="bot-option" data-type="control" data-key="spawngem"><span class="roundedslider"></span>
+                    <input type="checkbox" class="bot-option" data-type="control" data-key="spawngems"><span class="roundedslider"></span>
                 </label>
             </div>
         </div>
