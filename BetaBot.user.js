@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.16
+// @version      1.2.17
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -1384,7 +1384,7 @@
             $("#craftingType").val(settings.get('setting.crafting_item'))
             $("#houseCraftingVetoList").multiSelect('deselect_all')
             $("#craftingJobFillQueue").click()
-            click('.craftingJobStartQueue[data-position="back"]')
+            click('.craftingJobStartQueue[data-position="front"]')
         },
         start() {
             vars.actionPending = true
