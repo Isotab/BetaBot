@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.17
+// @version      1.2.19
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -37,6 +37,7 @@
         eventChannelID: 0,
         lastAction: null,
         canSpawnGem: true,
+        runOneEvent: false,
     }
 
     let logs = []
@@ -104,6 +105,8 @@
                 default_ts: 'fishing',
                 mob_count: '500',
                 mobs_to_move: '1',
+                mob_move_down_percent: '97.0',
+                mob_move_up_percent: '99.5',
                 debug: false,
             },
             readonly: {
@@ -197,9 +200,10 @@
         parseEvent(message) {
             message = message.trim()
             if (message == 'InitEvent') {
-                log(true, 'Starting Event')
-                let action = settings.get('event.base_action') == 'ts' ? settings.get('setting.default_ts') : settings.get('event.base_action')
-                actions.changeEvent(action)
+                log(true, 'Global run one event command')
+                vars.runOneEvent = true
+                // let action = settings.get('event.base_action') == 'ts' ? settings.get('setting.default_ts') : settings.get('event.base_action')
+                // actions.changeEvent(action)
                 return
             }
             log(true, 'Unknown message ' + message)
@@ -351,6 +355,11 @@
                 case 'disposal':
                     log(true, 'Setting garbage disposal')
                     housing.disposal()
+                    break;
+
+                case 'run_one_event':
+                    log(true, 'Run one event command')
+                    vars.runOneEvent = true
                     break;
             }
         },
@@ -579,6 +588,8 @@
 
             let total = t.wins + t.losses
 
+            
+
             if (!settings.get('control.mob_control') && $('#bq_info').text().includes('You don\'t currently have a battle quest.')) {
                 if (settings.get('control.quest')) {
                     log(true, 'Mob Control Trigger Quest')
@@ -587,9 +598,26 @@
                 return
             }
 
+            let mob_check_count = parseInt(settings.get('setting.mob_count'))
+            let percent_move_down = parseFloat(settings.get('setting.mob_move_down_percent'))
+            let percent_move_up = parseFloat(settings.get('setting.mob_move_up_percent'))
+
+            if (!$('#bq_info').text().includes('You don\'t currently have a battle quest.')) {
+                return // Just skip everything if a quest is active
+            }
+
+            let maxLosses = Math.ceil(mob_check_count * ((100 - percent_move_down) / 100))
+
+            // Move down if we exceed the max losses 
+            if (t.losses > maxLosses) {
+                mob_control.direction = 'down'
+                mob_control.start_move()
+                return
+            }
+
             /* If we have enough battles and there is no current battle quest do the logic for moving */
             // if (total > parseInt(settings.get('setting.mob_count')) && d.results.p.bq_info2.a == 1) {
-            if (total > parseInt(settings.get('setting.mob_count')) && $('#bq_info').text().includes('You don\'t currently have a battle quest.')) {
+            if (total > mob_check_count) {
 
                 if (!settings.get('control.mob_control') || (settings.get('control.mob_control_locket') && isNight())) {
                     mob_control.reset()
@@ -600,11 +628,11 @@
                     return
                 }
                 // log('Mob Control', 'Move mob logic triggered')
-                let percent = t.wins / total
+                let percent = (t.wins / total) * 100 // Easier to make one percent match than bring the other 2
 
-                if (percent >= 0.995) {
+                if (percent >= percent_move_up) {
                     mob_control.direction = 'up'
-                } else if (percent <= 0.97) {
+                } else if (percent <= percent_move_down) {
                     mob_control.direction = 'down'
                 } else {
                     // Stay
@@ -1310,6 +1338,16 @@
                     {level, type: crafting.items.Shield, filters: ['20', '30', '70', '60']}
                 ]
             },
+            StatSet(level, statItems = 2) {
+                return [
+                    {level, type: crafting.items.Sword, filters: ['22', '30', '48', (statItems >= 6 ? '63' : '60')]},
+                    {level, type: crafting.items.Helmet, filters: ['20', '30', '70', (statItems >= 5 ? '63' : '60')]},
+                    {level, type: crafting.items.Breastplate, filters: ['20', '30', '70', (statItems >= 4 ? '63' : '60')]},
+                    {level, type: crafting.items.Gloves, filters: ['20', '30', '70', (statItems >= 3 ? '63' : '60')]},
+                    {level, type: crafting.items.Boots, filters: ['20', '30', '70', (statItems >= 2 ? '63' : '60')]},
+                    {level, type: crafting.items.Shield, filters: ['20', '30', '70', (statItems >= 1 ? '63' : '60')]}
+                ]
+            },
             CraftingSet(level) {
                 return [
                     {level, type: crafting.items.Sword, filters: ['22', '38', '66', '62']},
@@ -1788,9 +1826,11 @@
 
             /* Events */
             let eventTimeLeft = data.results.p.event_end || null
-            if (eventTimeLeft !== null && settings.get('event.join') && eventTimeLeft <= (settings.get('event.join_time') * 60)) {
+            if (eventTimeLeft !== null && (settings.get('event.join') || vars.runOneEvent) && eventTimeLeft <= (settings.get('event.join_time') * 60)) {
                 let action = settings.get('event.base_action') == 'ts' ? settings.get('setting.default_ts') : settings.get('event.base_action')
                 actions.changeEvent(action)
+                if (vars.runOneEvent)
+                    vars.runOneEvent = false
                 return
             }
 
@@ -2645,6 +2685,16 @@
             </div>
         </div>
         <div class="row">
+            <label class="col-xs-3">Mob Control Percent Move Up</label>
+            <div class="col-xs-3">
+                <input type="text" class="form-control bot-option" data-type="setting" data-key="mob_move_up_percent" />
+            </div>
+            <label class="col-xs-3">Mob Control Percent Move Down</label>
+            <div class="col-xs-3">
+                <input type="text" class="form-control bot-option" data-type="setting" data-key="mob_move_down_percent" />
+            </div>
+        </div>
+        <div class="row">
             <div class="col-xs-3">Debug Mode</div>
             <div class="col-xs-3">
                 <label class="switch">
@@ -2848,6 +2898,7 @@
                     <li class="bot-command" data-command="disposal"><a href="#">Set Garbage Disposal</a></li>
                     <li class="bot-command" data-command="buy_stamina"><a href="#">Buy Stamina</a></li>
                     <li class="bot-command" data-command="toggle_timers"><a href="#">Toggle Timers</a></li>
+                    <li class="bot-command" data-command="run_one_event"><a href="#">Run One Event</a></li>
                 </ul>
             </div>
             <div class="btn-group">
