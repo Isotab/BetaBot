@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.19
+// @version      1.2.20
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -1703,16 +1703,17 @@
             await sleep(settings.get('setting.delay'))
             click('a.green')
             await sleep(settings.get('setting.delay'))
-            finish()
+            finish('#modal2Wrapper .closeModal')
         },
 
         updateQueueDisplay() {
             rows = []
 
-            spawngem.queue.forEach(gem => {
+            spawngem.queue.forEach((gem, index) => {
                 let pName = spawngem.gems.find(g => g.value == gem.primary)
                 let sName = spawngem.gems.find(g => g.value == gem.secondary)
-                rows.push(`<tr><td>${pName.name}</td><td>${sName.name}</td><td>${gem.level * 10} / ${gem.level}</td><td>${gem.amount}</td>`)
+                rows.push(`<tr><td>${pName.name}</td><td>${sName.name}</td><td>${gem.level * 10} / ${gem.level}</td><td>${gem.amount}</td><td>
+                    <button class="bot-remove-gem-from-queue btn btn-sm" data-id="${index}">X</button>`)
             })
 
             $('#spawngem_queue').html(rows.join(`\n`))
@@ -2273,11 +2274,11 @@
         return new Promise(resolve => setTimeout(resolve, (seconds ? parseInt(time) * 1000 : time)))
     }
 
-    async function finish() {
+    async function finish(elem = '.closeModal') {
         await sleep(settings.get('setting.delay'))
         vars.actionPending = false
         vars.actionCount = 0
-        $(".closeModal").click()
+        $(elem).click()
     }
 
     function prepareEvents() {
@@ -2292,7 +2293,10 @@
             $('#modalWrapper, #modalBackground, #bot-wrapper').show()
         })
 
-        $('#modalBackground, .closeModal').click(event => {
+        $('#modalBackground, .closeModal').click(function() {
+            if ($(this).hasClass('closeModal') && $(this).parents('#modalWrapper').length == 0)
+                return    
+
             $('#bot-wrapper').hide()
         })
 
@@ -2414,6 +2418,12 @@
             let string = $('#betabot-import-settings-input').val()
             settings.import(string)
             $('#betabot-import-settings-input').val('')
+        })
+
+        $(document).on('click', '.bot-remove-gem-from-queue', function() {
+            let index = parseInt($(this).attr('data-id'))
+            spawngem.queue.splice(index, 1)
+            spawngem.updateQueueDisplay()
         })
 
         $(document).on('roa-ws:battle roa-ws:harvest roa-ws:craft roa-ws:carve', controller.checkGeneral)
@@ -2850,6 +2860,7 @@
                             <th>Secondary Gem</th>
                             <th>Level / Tier</th>
                             <th>Amount</th>
+                            <th>Remove</th>
                         </tr>
                     </thead>
                     <tbody id="spawngem_queue"></tbody>
