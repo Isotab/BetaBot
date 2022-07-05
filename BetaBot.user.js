@@ -2424,7 +2424,7 @@
         await sleep(settings.get('setting.delay'))
         vars.actionPending = false
         vars.actionCount = 0
-        $().click()
+        $(`${elem}`).click()
     }
 
     function prepareEvents() {
