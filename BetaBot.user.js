@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.20
+// @version      1.2.21
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -94,6 +94,7 @@
                 crafting_queue_min: '5',
                 crafting_quality: '0',
                 crafting_item: '55',
+                crafting_queue_position: 'back',
                 carving_queue_min: '5',
                 bot_channel_name: '',
                 bot_channel_password: '',
@@ -1422,7 +1423,7 @@
             $("#craftingType").val(settings.get('setting.crafting_item'))
             $("#houseCraftingVetoList").multiSelect('deselect_all')
             $("#craftingJobFillQueue").click()
-            click('.craftingJobStartQueue[data-position="front"]')
+            click(`.craftingJobStartQueue[data-position="${settings.get('setting.crafting_queue_position')}"]`)
         },
         start() {
             vars.actionPending = true
@@ -1630,19 +1631,164 @@
                         amount: 4
                     },
                     {
+                        primary: 2,
+                        secondary: 61,
+                        level: level,
+                        amount: 1
+                    },
+                    ...spawngem.chronoPresent(level)
+                ]
+            }
+        },
+
+        chronoPresent(level) {
+            if (level < 390) {
+                return [
+                    {
+                        primary: 62,
+                        secondary: 0,
+                        level: level,
+                        amount: 5
+                    }
+                ]
+            }
+            if (level < 440) {
+                return [
+                    {
                         primary: 0,
                         secondary: 62,
                         level: level,
                         amount: 1
                     },
                     {
-                        primary: 2,
-                        secondary: 61,
+                        primary: 62,
+                        secondary: 0,
+                        level: level,
+                        amount: 4
+                    }
+                ]
+            }
+            if (level < 510) {
+                return [
+                    {
+                        primary: 0,
+                        secondary: 62,
+                        level: level,
+                        amount: 2
+                    },
+                    {
+                        primary: 62,
+                        secondary: 0,
+                        level: level,
+                        amount: 3
+                    }
+                ]
+            }
+            if (level < 590) {
+                return [
+                    {
+                        primary: 0,
+                        secondary: 62,
+                        level: level,
+                        amount: 3
+                    },
+                    {
+                        primary: 62,
+                        secondary: 0,
+                        level: level,
+                        amount: 2
+                    }
+                ]
+            }
+            if (level < 710) {
+                return [
+                    {
+                        primary: 0,
+                        secondary: 62,
+                        level: level,
+                        amount: 4
+                    },
+                    {
+                        primary: 62,
+                        secondary: 0,
+                        level: level,
+                        amount: 1
+                    }
+                ]
+            }
+            if (level < 890) {
+                return [
+                    {
+                        primary: 0,
+                        secondary: 62,
+                        level: level,
+                        amount: 5
+                    }
+                ]
+            }
+            if (level < 1190) {
+                return [
+                    {
+                        primary: 0,
+                        secondary: 62,
+                        level: level,
+                        amount: 4
+                    },
+                    {
+                        primary: 0,
+                        secondary: 1,
+                        level: level,
+                        amount: 1
+                    }
+                ]
+            }
+            if (level < 1780) {
+                return [
+                    {
+                        primary: 0,
+                        secondary: 62,
+                        level: level,
+                        amount: 3
+                    },
+                    {
+                        primary: 0,
+                        secondary: 1,
+                        level: level,
+                        amount: 2
+                    }
+                ]
+            }
+            if (level < 3570) {
+                return [
+                    {
+                        primary: 62,
+                        secondary: 0,
                         level: level,
                         amount: 1
                     },
+                    {
+                        primary: 0,
+                        secondary: 1,
+                        level: level,
+                        amount: 4
+                    }
                 ]
             }
+            return [
+                {
+                    primary: 0,
+                    secondary: 62,
+                    level: level,
+                    amount: 1
+                },
+                {
+                    primary: 1,
+                    secondary: 0,
+                    level: level,
+                    amount: 4
+                }
+            ]
+            
         },
 
         addToQueue(primary, secondary, level, amount) {
@@ -1655,14 +1801,14 @@
             spawngem.updateQueueDisplay()
         },
 
-        addPresetToQueue(present) {
+        addPresetToQueue(present, sets = 1) {
             if (vars.canSpawnGem) {
                 vars.canSpawnGem = false
                 setTimeout(() => vars.canSpawnGem = true, 2500)
             }
 
             present.forEach(item => {
-                spawngem.addToQueue(item.primary, item.secondary, item.level / 10, item.amount)
+                spawngem.addToQueue(item.primary, item.secondary, item.level / 10, item.amount * sets)
             })
 
             spawngem.updateQueueDisplay()
@@ -2639,6 +2785,16 @@
                 </select>
             </div>
         </div>
+        <div class="row">
+            <label class="col-xs-3">Crafting Quality</label>
+            <div class="col-xs-3">
+                <select class="form-control bot-option" data-type="setting" data-key="crafting_queue_position">
+                    <option value="front">Start</option>
+                    <option value="back">End</option>
+                </select>
+            </div>
+        </div>
+        
         <div class="row">
             <label class="col-xs-3">Minimum Resources</label>
             <div class="col-xs-3">
