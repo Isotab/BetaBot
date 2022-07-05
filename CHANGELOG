@@ -1,3 +1,6 @@
+### V1.2.22
+    * Fix for break in logic closing open modal
+    
 ### V1.2.21
     * Added option to change if your crafting queue items get added to the start or end of your queue
     * Some minor work on future addition of spawn gem sets

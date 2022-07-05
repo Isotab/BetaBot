@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.21
+// @version      1.2.22
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -805,7 +805,7 @@
             click("a#harvestronNotifier")
         },
         async step1(event, data) {
-            $(document).one('roa-ws:page:house_harvest_job', finish)
+            $(document).one('roa-ws:page:house_harvest_job', () => finish)
             await sleep(settings.get('setting.delay'))
             let type = settings.get('control.harvestron_type')
             let tmp = [
@@ -1130,7 +1130,7 @@
 
         async buyStamina2(e, d) {
             await sleep(settings.get('setting.delay'))
-            $(document).one('roa-ws:page:boost_purchase_stamina', finish)
+            $(document).one('roa-ws:page:boost_purchase_stamina', () => finish)
             $('#max_button_autos').click()
             await sleep(250)
             let t = parseInt($('#autos_to_buy').val())
@@ -1416,7 +1416,7 @@
             click(".craftingTableLink")
         },
         async fill_2(event, data) {
-            $(document).one('roa-ws:page:craft_item', finish)
+            $(document).one('roa-ws:page:craft_item', () => finish)
             await sleep(settings.get('setting.delay'))
             $("#craftingItemLevelMax").click()
             $("#craftingQuality").val(settings.get('setting.crafting_quality'))
@@ -1431,7 +1431,7 @@
             click(".craftingTableLink")
         },
         async start_2(event, data) {
-            $(document).one('roa-ws:page:craft_item', finish)
+            $(document).one('roa-ws:page:craft_item', () => finish)
             await sleep(settings.get('setting.delay'))
             if ($("#craft_sortable span.itemWithTooltip").length > 0) {
                 click('#craft_sortable .craftingResumeButton:first')
@@ -1464,7 +1464,7 @@
             click(".craftingTableLink")
         },
         async addFromQueue_2(event, data) {
-            $(document).one('roa-ws:page:craft_item', finish)
+            $(document).one('roa-ws:page:craft_item', () => finish)
             await sleep(settings.get('setting.delay'))
             let item = crafting.queue.shift()
             $("#craftingItemLevel").val(item.level)
@@ -1486,7 +1486,7 @@
             click('.carvingBenchLink')
         },
         async fill_2(event, data) {
-            $(document).one('roa-ws:page:carve_gem', finish)
+            $(document).one('roa-ws:page:carve_gem', () => finish)
             await sleep(settings.get('setting.delay'))
             let maxLevel = $('#carvingItemLevel option:last').val()
             let efficentLevel = maxLevel - (maxLevel + 1) % 3 // KLeeping this around but not used because training gems
@@ -1502,7 +1502,7 @@
             click('.carvingBenchLink')
         },
         async start_2(event, data) {
-            $(document).one('roa-ws:page:carve_gem', finish)
+            $(document).one('roa-ws:page:carve_gem', () => finish)
             await sleep(settings.get('setting.delay'))
             // Resume current gems
             if ($("#carve_sortable span.gemWithTooltip").length > 0) {
@@ -1877,7 +1877,7 @@
             click('button#settingsAccountPreferences')
         },
         async step2(event, data) {
-            $(document).one('roa-ws:page:settings_preferences_change', finish)
+            $(document).one('roa-ws:page:settings_preferences_change', () => finish)
             await sleep(settings.get('setting.delay'))
             $('input.preferenceButton[data-type="4"]').click()
             await sleep(settings.get('setting.delay'))
@@ -2315,7 +2315,7 @@
             click('a.toolUpgradeMax[data-type="' + tools.type + '"]')
         },
         upgrade3(event, data) {
-            $(document).one('roa-ws:page:harvest_level_max', finish)
+            $(document).one('roa-ws:page:harvest_level_max', () => finish)
             click('div#confirmButtons > a.button.green')
         }
     }
@@ -2424,7 +2424,7 @@
         await sleep(settings.get('setting.delay'))
         vars.actionPending = false
         vars.actionCount = 0
-        $(elem).click()
+        $().click()
     }
 
     function prepareEvents() {
