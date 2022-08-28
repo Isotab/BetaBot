@@ -1,3 +1,10 @@
+### V1.2.23
+    * Added crafting preset for a stat/drop boost mix
+    * Added ability to specify a number of drop boost items for TS crafting sets
+    * Cleaned up TS presets to use one master function
+    * Removed BxpSetOld preset
+    * Fixed health / strength gems in the preset logic
+    
 ### V1.2.22
     * Fix for break in logic closing open modal
     

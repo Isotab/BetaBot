@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.22
+// @version      1.2.23
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -1319,16 +1319,6 @@
             Quiver: '55'
         },
         presets: {
-            BxpSetOld(level) {
-                return [
-                    {level, type: crafting.items.Sword, filters: ['22', '29', '48', '60']},
-                    {level, type: crafting.items.Helmet, filters: ['26', '29', '70', '60']},
-                    {level, type: crafting.items.Breastplate, filters: ['26', '29', '70', '60']},
-                    {level, type: crafting.items.Gloves, filters: ['26', '29', '70', '60']},
-                    {level, type: crafting.items.Boots, filters: ['26', '29', '70', '60']},
-                    {level, type: crafting.items.Shield, filters: ['26', '29', '70', '60']}
-                ]
-            },
             BxpSet(level) {
                 return [
                     {level, type: crafting.items.Sword, filters: ['22', '30', '48', '60']},
@@ -1347,6 +1337,16 @@
                     {level, type: crafting.items.Gloves, filters: ['20', '30', '70', (statItems >= 3 ? '63' : '60')]},
                     {level, type: crafting.items.Boots, filters: ['20', '30', '70', (statItems >= 2 ? '63' : '60')]},
                     {level, type: crafting.items.Shield, filters: ['20', '30', '70', (statItems >= 1 ? '63' : '60')]}
+                ]
+            },
+            StatDropSet(level, statItems = 2) {
+                return [
+                    {level, type: crafting.items.Sword, filters: ['22', '30', '48', (statItems >= 6 ? '63' : '62')]},
+                    {level, type: crafting.items.Helmet, filters: ['20', '30', '70', (statItems >= 5 ? '63' : '62')]},
+                    {level, type: crafting.items.Breastplate, filters: ['20', '30', '70', (statItems >= 4 ? '63' : '62')]},
+                    {level, type: crafting.items.Gloves, filters: ['20', '30', '70', (statItems >= 3 ? '63' : '62')]},
+                    {level, type: crafting.items.Boots, filters: ['20', '30', '70', (statItems >= 2 ? '63' : '62')]},
+                    {level, type: crafting.items.Shield, filters: ['20', '30', '70', (statItems >= 1 ? '63' : '62')]}
                 ]
             },
             CraftingSet(level) {
@@ -1369,45 +1369,27 @@
                     {level, type: crafting.items.Shield, filters: ['26', '39', '70', (level >= 3500 ? '63' : '62')]}
                 ]
             },
-            Fishing(level) {
+            BaseTsSet(level, boost, dropItems) {
                 return [
-                    {level, type: crafting.items.Sword, filters: ['22', '33', '66', '37']},
-                    {level, type: crafting.items.Helmet, filters: ['26', '33', '70', '37']},
-                    {level, type: crafting.items.Breastplate, filters: ['26', '33', '70', '37']},
-                    {level, type: crafting.items.Gloves, filters: ['26', '33', '70', '37']},
-                    {level, type: crafting.items.Boots, filters: ['26', '33', '70', '37']},
-                    {level, type: crafting.items.Shield, filters: ['26', '33', '70', '37']}
+                    {level, type: crafting.items.Sword, filters: ['22', boost, '66', (dropItems >= 6 ? '62' : '37')]},
+                    {level, type: crafting.items.Helmet, filters: ['26', boost, '70', (dropItems >= 5 ? '62' : '37')]},
+                    {level, type: crafting.items.Breastplate, filters: ['26', boost, '70', (dropItems >= 4 ? '62' : '37')]},
+                    {level, type: crafting.items.Gloves, filters: ['26', boost, '70', (dropItems >= 3 ? '62' : '37')]},
+                    {level, type: crafting.items.Boots, filters: ['26', boost, '70', (dropItems >= 2 ? '62' : '37')]},
+                    {level, type: crafting.items.Shield, filters: ['26', boost, '70', (dropItems >= 1 ? '62' : '37')]}
                 ]
             },
-            WoodCutting(level) {
-                return [
-                    {level, type: crafting.items.Sword, filters: ['22', '34', '66', '37']},
-                    {level, type: crafting.items.Helmet, filters: ['26', '34', '70', '37']},
-                    {level, type: crafting.items.Breastplate, filters: ['26', '34', '70', '37']},
-                    {level, type: crafting.items.Gloves, filters: ['26', '34', '70', '37']},
-                    {level, type: crafting.items.Boots, filters: ['26', '34', '70', '37']},
-                    {level, type: crafting.items.Shield, filters: ['26', '34', '70', '37']}
-                ]
+            Fishing(level, dropItems = 0) {
+                return crafting.presets.BaseTsSet(level, '33', dropItems)
             },
-            Mining(level) {
-                return [
-                    {level, type: crafting.items.Sword, filters: ['22', '35', '66', '37']},
-                    {level, type: crafting.items.Helmet, filters: ['26', '35', '70', '37']},
-                    {level, type: crafting.items.Breastplate, filters: ['26', '35', '70', '37']},
-                    {level, type: crafting.items.Gloves, filters: ['26', '35', '70', '37']},
-                    {level, type: crafting.items.Boots, filters: ['26', '35', '70', '37']},
-                    {level, type: crafting.items.Shield, filters: ['26', '35', '70', '37']}
-                ]
+            WoodCutting(level, dropItems = 0) {
+                return crafting.presets.BaseTsSet(level, '34', dropItems)
             },
-            StoneCutting(level) {
-                return [
-                    {level, type: crafting.items.Sword, filters: ['22', '36', '66', '37']},
-                    {level, type: crafting.items.Helmet, filters: ['26', '36', '70', '37']},
-                    {level, type: crafting.items.Breastplate, filters: ['26', '36', '70', '37']},
-                    {level, type: crafting.items.Gloves, filters: ['26', '36', '70', '37']},
-                    {level, type: crafting.items.Boots, filters: ['26', '36', '70', '37']},
-                    {level, type: crafting.items.Shield, filters: ['26', '36', '70', '37']}
-                ]
+            Mining(level, dropItems = 0) {
+                return crafting.presets.BaseTsSet(level, '35', dropItems)
+            },
+            StoneCutting(level, dropItems = 0) {
+                return crafting.presets.BaseTsSet(level, '36', dropItems)
             }
         },
         fill() {
@@ -1625,12 +1607,6 @@
                         amount: 5
                     },
                     {
-                        primary: 0,
-                        secondary: 1,
-                        level: level,
-                        amount: 4
-                    },
-                    {
                         primary: 2,
                         secondary: 61,
                         level: level,
@@ -1782,8 +1758,8 @@
                     amount: 1
                 },
                 {
-                    primary: 1,
-                    secondary: 0,
+                    primary: 0,
+                    secondary: 1,
                     level: level,
                     amount: 4
                 }
