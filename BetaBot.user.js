@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.23
+// @version      1.2.24
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -298,6 +298,10 @@
                 case 'buy_stamina':
                     crystalBoosts.buyStamina()
                     break;
+                
+                case 'buy_blueprint':
+                    crystalBoosts.buyBetterBlueprints(parts[2])
+                    break;
 
                 case 'switch_action':
                     if (altsWhoIgnoreCommands.includes(vars.username)) return
@@ -355,7 +359,7 @@
 
                 case 'disposal':
                     log(true, 'Setting garbage disposal')
-                    housing.disposal()
+                    housing.disposal(parts[2])
                     break;
 
                 case 'run_one_event':
@@ -1122,6 +1126,8 @@
     }
 
     let crystalBoosts = {
+        daysToBuy: 0, //
+
         buyStamina() {
             vars.actionPending = true
             $(document).one('roa-ws:page:boosts', crystalBoosts.buyStamina2)
@@ -1139,10 +1145,32 @@
             }
             await sleep(250)
             $('#increaseAutos').click()
+        },
+
+        buyBetterBlueprints(days) {
+            crystalBoosts.daysToBuy = parseInt(days)
+            vars.actionPending = true
+            $(document).one('roa-ws:page:boosts', crystalBoosts.buyBetterBlueprints2)
+            click("li#premiumShop")
+        },
+
+        async buyBetterBlueprints2(e, d) {
+            await sleep(settings.get('setting.delay'))
+            $(document).one('roa-ws:page:boost_purchase', () => finish())
+
+            let crystals = parseInt($("td.mypremium").attr('data-personal').replace(/,/g, ''))
+            let maxUse = Math.floor(crystals / 2)
+            let buyAmount = Math.min(Math.floor(maxUse / 2), (crystalBoosts.daysToBuy * 24 * 60))
+
+            $($('.boost_count')[11]).val(buyAmount)
+            await sleep(250)
+
+            $($('.increaseBoost')[11]).click()
         }
     }
 
     let housing = {
+        max: 5,
         build() {
             vars.actionPending = true
             $(document).one('roa-ws:page:house', housing.step1)
@@ -1281,8 +1309,9 @@
             $(".closeModal").click()
         },
 
-        disposal(event, data) {
+        disposal(max) {
             vars.actionPending = true
+            housing.max = parseInt(max)
             $(document).one('roa-ws:page:house_room_item', housing.disposal2)
             openHouseRoom(3, 91)
         },
@@ -1292,14 +1321,14 @@
             let highest = 0
             $('#houseTrashCompactorToggle option').each(function() {
                 let val = parseInt($(this).attr('value'))
-                if (val <= 5) {
+                // if (val <= 5) {
                     if (val > highest) {
                         highest = val
                     }
-                }
+                // }
             })
 
-            $('#houseTrashCompactorToggle').val(highest)
+            $('#houseTrashCompactorToggle').val(Math.min(highest, housing.max))
             $('#houseTrashCompactorCraftingToggle').val(3)
             $('#houseTrashCompactorSelect').click()
         }
@@ -3038,8 +3067,10 @@
                     <li class="bot-command" data-command="advent_calendar"><a href="#">Advent Calendar</a></li>
                     <li class="bot-command" data-command="initial_tools"><a href="#">Buy Initial Tool Levels</a></li>
                     <li class="bot-command" data-command="scrap"><a href="#">Scrap crap</a></li>
-                    <li class="bot-command" data-command="disposal"><a href="#">Set Garbage Disposal</a></li>
+                    <li class="bot-command" data-command="disposal|5"><a href="#">Set Garbage Disposal (Legendary)</a></li>
+                    <li class="bot-command" data-command="disposal|7"><a href="#">Set Garbage Disposal (Relic)</a></li>
                     <li class="bot-command" data-command="buy_stamina"><a href="#">Buy Stamina</a></li>
+                    <li class="bot-command" data-command="buy_blueprint|7"><a href="#">Buy Better Blueprints (1 Week)</a></li>
                     <li class="bot-command" data-command="toggle_timers"><a href="#">Toggle Timers</a></li>
                     <li class="bot-command" data-command="run_one_event"><a href="#">Run One Event</a></li>
                 </ul>

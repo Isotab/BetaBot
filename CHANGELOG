@@ -1,3 +1,8 @@
+### V1.2.24
+    * Added command to buy a weeks worth of better blueprints
+    * Added command to set trash compactor to trash relics
+    * Changed how trash compactor works to accomidate a max paramater
+
 ### V1.2.23
     * Added crafting preset for a stat/drop boost mix
     * Added ability to specify a number of drop boost items for TS crafting sets
