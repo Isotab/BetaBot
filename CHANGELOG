@@ -1,3 +1,6 @@
+### V1.2.26
+    * Changed up clean up housing option, removed agility and quest boost, bumped up threshold for str, agi, and health
+
 ### V1.2.25
     * Added full dropdown list for all settings instead of needing to type in type:setting
     * Added first iteration of crafting queue UI

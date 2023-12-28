@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.25
+// @version      1.2.26
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -1217,40 +1217,35 @@
                             "Gold Boost",
                             "Construction Boost"
                         ]
-                        let agi = 0,
-                            hp = 0,
+                        let hp = 0,
                             str = 0,
                             coord = 0,
                             qb = 0,
                             apen
                         try {
                             //fhc = parseInt(data.bonuses.Miscellaneous[94].split(" ", 1)[0].replace('+', '').replace('%', ''))
-                            agi = parseFloat(data.bonuses.Stats[17].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
                             hp = parseFloat(data.bonuses.Stats[15].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
                             str = parseFloat(data.bonuses.Stats[14].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
                             coord = parseFloat(data.bonuses.Stats[16].replace(/  /g, ' ').split(' ', 3)[1].replace('(', '').replace(')', '').replace('%', ''))
-                            qb = parseInt(data.bonuses["Crystal Shop"][64].split(" ", 1)[0].replace('+', '').replace('%', ''))
+                            // qb = parseInt(data.bonuses["Crystal Shop"][64].split(" ", 1)[0].replace('+', '').replace('%', ''))
                             apen = parseFloat(data.bonuses.Miscellaneous[97].split(" ", 1)[0].replace('+', '').replace('%', ''))
                         } catch(e) {}
 
                         // if (fhc < 50) {
                         //     accepted.push("First Hit Chance")
                         // }
-                        if (str < 40) {
+                        if (str < 200) {
                             accepted.push('Strength')
                         }
-                        if (coord < 40) {
+                        if (coord < 60) {
                             accepted.push('Coordination')
                         }
-                        if (hp < 40) {
+                        if (hp < 100) {
                             accepted.push('Health')
                         }
-                        if (agi < 80) {
-                            accepted.push('Agility')
-                        }
-                        if (qb < 150) {
-                            accepted.push('Quest Boost')
-                        }
+                        // if (qb < 150) {
+                        //     accepted.push('Quest Boost')
+                        // }
                         if (apen < 50) {
                             accepted.push('Armor Penetration')
                         }
