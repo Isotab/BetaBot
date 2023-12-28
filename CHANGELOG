@@ -1,3 +1,10 @@
+### V1.2.25
+    * Added full dropdown list for all settings instead of needing to type in type:setting
+    * Added first iteration of crafting queue UI
+    * Added clear queue button for spawn gem queue
+    * Made adding items from queue a little smoother
+    * Added new option to fill crating table from queue
+
 ### V1.2.24
     * Added command to buy a weeks worth of better blueprints
     * Added command to set trash compactor to trash relics

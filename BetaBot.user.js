@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.24
+// @version      1.2.25
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -14,7 +14,7 @@
 
 /*
     TODO:
-    * Add screen for crafting item sets
+    * Add screen for crafting item sets (Its ugly but it works)
     * Polish up list for gem spawning (WIP)
     * Write mass wire based upon the pattern ${settings.alt_basename}${romanize(x)}
     * Add some in game information on what each setting does
@@ -63,6 +63,7 @@
                 harvestron: false,
                 harvestron_type: 'round_robin',
                 crafting: false,
+                crafting_from_queue: false,
                 carving: false,
                 mob_control: false,
                 mob_control_locket: false,
@@ -1347,6 +1348,53 @@
             Shield: '54',
             Quiver: '55'
         },
+        keys: {
+            0: 'Sword',
+            1: 'Staff',
+            2: 'Bow',
+            50: 'Helmet',
+            51: 'Breastplate',
+            52: 'Gloves',
+            53: 'Boots',
+            54: 'Shield',
+            55: 'Quiver',
+            20: 'Counter Attack',
+            21: 'Healing',
+            26: 'Evasion',
+            22: 'Melee Weapons',
+            23: 'Ranged Weapons',
+            24: 'Magical Weapons',
+            27: 'MultiStrike Chance',
+            28: 'Critical Hit Chance',
+            29: 'Critical Hit Damage',
+            30: 'Toughness',
+            31: 'Counter Attack',
+            32: 'Healing Boost',
+            33: 'Fishing Boost',
+            34: 'Woodcutting Boost',
+            35: 'Mining Boost',
+            36: 'Stonecutting Boost',
+            38: 'Crafting Boost',
+            39: 'Carving Boost',
+            70: 'Armor',
+            66: 'Gold Per Kill',
+            40: 'Damage to Aberrations',
+            41: 'Damage to Animals',
+            42: 'Damage to Beasts',
+            43: 'Damage to Constructs',
+            44: 'Damage to Dragons',
+            45: 'Damage to Elementals',
+            46: 'Damage to Humanoids',
+            47: 'Damage to Oozes',
+            48: 'Damage to Plants',
+            49: 'Damage to Serpents',
+            50: 'Damage to Vermin',
+            60: 'Battle Exp Boost',
+            61: 'Gold Boost',
+            37: 'Resource Boost',
+            62: 'Drop Boost',
+            63: 'Stat Drop Boost'
+        },
         presets: {
             BxpSet(level) {
                 return [
@@ -1461,6 +1509,7 @@
                 type,
                 filters
             })
+            crafting.updateQueueDisplay()
         },
         addPresetToQueue(preset, times = 1) {
             for (i = 0; i < times; i++) {
@@ -1475,19 +1524,59 @@
             click(".craftingTableLink")
         },
         async addFromQueue_2(event, data) {
-            $(document).one('roa-ws:page:craft_item', () => finish())
+            let addAnother = false
+            let matches = /Items in Queue \((\d+) \/ (\d+)\)/g.exec(data.item.desc)
+            if (matches && matches.length == 3) {
+                let current = parseInt(matches[1])
+                let max = parseInt(matches[2])
+
+                if (crafting.queue.length > 1 && current + 1 < max)
+                    addAnother = true
+
+                log(true, `Checking Crafting queue info - Current Items: ${current} - Max Items: ${max} - Add another ${addAnother}`)
+            }
+
+            if (addAnother) {
+                $(document).one('roa-ws:page:craft_item', crafting.addFromQueue_2)
+                vars.actionCount = 0 // Reset Count so it does not time out
+            } else {
+                $(document).one('roa-ws:page:craft_item', () => finish())
+            }
+
             await sleep(settings.get('setting.delay'))
             let item = crafting.queue.shift()
             $("#craftingItemLevel").val(item.level)
+            await sleep(100)
             $("#craftingQuality").val('7')
+            await sleep(100)
             $("#craftingType").val(item.type)
+            await sleep(100)
             $("#houseCraftingVetoList").multiSelect('select_all')
 
             await sleep(200)
             $("#houseCraftingVetoList").multiSelect('deselect', item.filters)
             await sleep(200)
             click('.craftingJobStartQueue[data-position="back"]')
+            crafting.updateQueueDisplay()
         },
+        updateQueueDisplay() {
+            rows = []
+
+            crafting.queue.forEach((item, index) => {
+                rows.push(`
+                <tr>
+                <td>${item.level}</td>
+                <td>${crafting.keys[item.type]}</td>
+                <td>${crafting.keys[item.filters[0]]}</td>
+                <td>${crafting.keys[item.filters[1]]}</td>
+                <td>${crafting.keys[item.filters[2]]}</td>
+                <td>${crafting.keys[item.filters[3]]}</td>
+                <td><button class="bot-remove-crafting-item-from-queue btn btn-sm" data-id="${index}">X</button></td>
+                </tr>`)
+            })
+
+            $('#crafting_queue').html(rows.join(`\n`))
+        }
     }
 
     let carving = {
@@ -1864,7 +1953,7 @@
                 let pName = spawngem.gems.find(g => g.value == gem.primary)
                 let sName = spawngem.gems.find(g => g.value == gem.secondary)
                 rows.push(`<tr><td>${pName.name}</td><td>${sName.name}</td><td>${gem.level * 10} / ${gem.level}</td><td>${gem.amount}</td><td>
-                    <button class="bot-remove-gem-from-queue btn btn-sm" data-id="${index}">X</button>`)
+                    <button class="bot-remove-gem-from-queue btn btn-sm" data-id="${index}">X</button></td></tr>`)
             })
 
             $('#spawngem_queue').html(rows.join(`\n`))
@@ -2048,21 +2137,18 @@
                 }
             }
 
-            if (!settings.get('control.crafting')) {
+            if (!settings.get('control.crafting') && !settings.get('control.crafting_from_queue')) {
                 return
             }
 
-            if (crafting.queue.length && data.results.a.cq < (data.results.a.mq - 1)) {
+            if (settings.get('control.crafting_from_queue') && crafting.queue.length && data.results.a.cq < (data.results.a.mq - 1)) {
                 doingSomething = true
                 crafting.addFromQueue()
                 return
             }
+            
 
-            if (vars.actionPending) {
-                return
-            }
-
-            if (data.results.a.cq <= settings.get('setting.crafting_queue_min')) {
+            if (settings.get('control.crafting') && data.results.a.cq <= settings.get('setting.crafting_queue_min')) {
                 crafting.fill()
             }
         },
@@ -2535,6 +2621,59 @@
             $('#spawngem_amount').val('')
         })
 
+        $(document).on('click', '#spawngem_remove_all', function(event) {
+
+            spawngem.queue = []
+            spawngem.updateQueueDisplay()
+        })
+
+        $(document).on('click', '#crafting_queue_submit', function(event) {
+
+            function getItem(item) {
+                return {
+                    level: parseInt($(`#crafting_queue_${item}_level`).val()),
+                    item: $(`#crafting_queue_${item}_type`).val(),
+                    skill: $(`#crafting_queue_${item}_skill`).val(),
+                    damage: $(`#crafting_queue_${item}_damage`).val(),
+                    tc: $(`#crafting_queue_${item}_tc`).val(),
+                    boost: $(`#crafting_queue_${item}_crystal`).val(),
+                }
+            }
+            const weapon = getItem('weapon')
+            const helmet = getItem('helmet')
+            const breastplate = getItem('breast')
+            const gloves = getItem('gloves')
+            const boots = getItem('boots')
+            const offhand = getItem('offhand')
+
+            if (weapon.level) {
+                crafting.addToQueue(weapon.level, weapon.item, [weapon.skill, weapon.tc, weapon.damage, weapon.boost])
+            }
+            if (helmet.level) {
+                crafting.addToQueue(helmet.level, helmet.item, [helmet.skill, helmet.tc, helmet.damage, helmet.boost])
+            }
+            if (breastplate.level) {
+                crafting.addToQueue(breastplate.level, breastplate.item, [breastplate.skill, breastplate.tc, breastplate.damage, breastplate.boost])
+            }
+            if (gloves.level) {
+                crafting.addToQueue(gloves.level, gloves.item, [gloves.skill, gloves.tc, gloves.damage, gloves.boost])
+            }
+            if (boots.level) {
+                crafting.addToQueue(boots.level, boots.item, [boots.skill, boots.tc, boots.damage, boots.boost])
+            }
+            if (offhand.level) {
+                crafting.addToQueue(offhand.level, offhand.item, [offhand.skill, offhand.tc, offhand.damage, offhand.boost])
+            }
+
+            return
+        })
+
+        $(document).on('click', '#crafting_queue_remove_all', function(event) {
+
+            crafting.queue = [];
+            crafting.updateQueueDisplay();
+        })
+
         $(document).on('click', '#bot-chat-recheck', function(event) {
             vars.checkingChannel = true
             vars.checkingEventChannel = true
@@ -2575,6 +2714,12 @@
             let index = parseInt($(this).attr('data-id'))
             spawngem.queue.splice(index, 1)
             spawngem.updateQueueDisplay()
+        })
+
+        $(document).on('click', '.bot-remove-crafting-item-from-queue', function() {
+            let index = parseInt($(this).attr('data-id'))
+            crafting.queue.splice(index, 1)
+            crafting.updateQueueDisplay()
         })
 
         $(document).on('roa-ws:battle roa-ws:harvest roa-ws:craft roa-ws:carve', controller.checkGeneral)
@@ -2647,13 +2792,21 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-xs-3">Crafting Queue Fill</div>
+            <div class="col-xs-3">Crafting Table Autofill</div>
             <div class="col-xs-3">
                 <label class="switch">
                     <input type="checkbox" class="bot-option" data-type="control" data-key="crafting"><span class="roundedslider"></span>
                 </label>
             </div>
-            <div class="col-xs-3">Carving Queue Fill</div>
+            <div class="col-xs-3">Crafting Table fill from Queue</div>
+            <div class="col-xs-3">
+                <label class="switch">
+                    <input type="checkbox" class="bot-option" data-type="control" data-key="crafting_from_queue"><span class="roundedslider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-3">Carving Table Autofill</div>
             <div class="col-xs-3">
                 <label class="switch">
                     <input type="checkbox" class="bot-option" data-type="control" data-key="carving"><span class="roundedslider"></span>
@@ -2875,6 +3028,29 @@
         </div>
         `
 
+        let overrideOptions = ''
+        overrideOptions += '<optgroup label="Control">'
+        Object.keys(settings.default.control).forEach(key => {
+            overrideOptions += `<option value="control:${key}">${key}</option>`
+        })
+        overrideOptions += '</optgroup>'
+        overrideOptions += '<optgroup label="Event">'
+        Object.keys(settings.default.event).forEach(key => {
+            overrideOptions += `<option value="event:${key}">${key}</option>`
+        })
+        overrideOptions += '</optgroup>'
+        overrideOptions += '<optgroup label="Training Center">'
+        Object.keys(settings.default.trainingcenter).forEach(key => {
+            overrideOptions += `<option value="trainingcenter:${key}">${key}</option>`
+        })
+        overrideOptions += '</optgroup>'
+        overrideOptions += '<optgroup label="Settings">'
+        Object.keys(settings.default.setting).forEach(key => {
+            overrideOptions += `<option value="setting:${key}">${key}</option>`
+        })
+        overrideOptions += '</optgroup>'
+
+
         let templateOverrides = `
         <div class="row">
             <div class="col-xs-12">
@@ -2908,7 +3084,9 @@
         <div class="row">
             <div class="col-xs-3">Custom Input</div>
             <div class="col-xs-9 input-group">
-                <input type="text" class="form-control" id="bot-override-custom-key" placeholder="Type:Key" />
+                <select class="form-control" id="bot-override-custom-key">
+                    ${overrideOptions}
+                </select>
                 <input type="text" class="form-control" id="bot-override-custom-value" placeholder="Value" />
                 <div class="input-group-append">
                     <button class="btn btn-primary" id="bot-override-custom-button">Change</button>
@@ -3002,8 +3180,11 @@
             </div>
         </div>
         <div class="row">
-            <div class="col-xs-6">
+            <div class="col-xs-3">
                 <button class="btn btn-success" id="spawngem_submit">Add To Queue</button>
+            </div>
+            <div class="col-xs-3">
+                <button class="btn btn-danger" id="spawngem_remove_all">Clear Queue</button>
             </div>
             <div class="col-xs-3">Enable Gem Spawner</div>
             <div class="col-xs-3">
@@ -3025,6 +3206,283 @@
                         </tr>
                     </thead>
                     <tbody id="spawngem_queue"></tbody>
+                </table>
+            </div>
+        </div>
+        `
+
+        let craftingQueueOptionsSkillsArmor = `
+            <option value="20">Counter Attack</option>
+            <option value="21">Healing</option>
+            <option value="26">Evasion</option>
+        `
+        let craftingQueueOptionsSkillsWeapon = `
+            <option value="22">Melee Weapons</option>
+            <option value="23">Ranged Weapons</option>
+            <option value="24">Magical Weapons</option>
+        ` + craftingQueueOptionsSkillsArmor
+
+        let craftingQueueOptionsTC = `
+            <option value="27">Multistrike Chance</option>
+            <option value="28">Critical Hit Chance</option>
+            <option value="29">Critical Hit Damage</option>
+            <option value="30">Toughness</option>
+            <option value="31">Counter Attack Damage</option>
+            <option value="32">Healing Boost</option>
+            <option value="33">Fishing Boost</option>
+            <option value="34">Woodcutting Boost</option>
+            <option value="35">Mining Boost</option>
+            <option value="36">Stonecutting Boost</option>
+            <option value="38">Crafting Boost</option>
+            <option value="39">Carving Boost</option>
+        `
+
+        let craftingQueueOptionsDamageArmor = `
+            <option value="70">Armor</option>
+            <option value="66">Gold Per Kill</option>
+        `
+
+        let craftingQueueOptionsDamageWeapon = `
+            <option value="66">Gold Per Kill</option>
+            <option value="40">damage to Aberrations</option>
+            <option value="41">damage to Animals</option>
+            <option value="42">damage to Beasts</option>
+            <option value="43">damage to Constructs</option>
+            <option value="44">damage to Dragons</option>
+            <option value="45">damage to Elementals</option>
+            <option value="46">damage to Humanoids</option>
+            <option value="47">damage to Oozes</option>
+            <option value="48">damage to Plants</option>
+            <option value="49">damage to Serpents</option>
+            <option value="50">damage to Vermin</option>
+        `
+
+        let craftingQueueOptionsCrystalBoosts = `
+            <option value="60">Bxp Boost</option>
+            <option value="61">Gold Boost</option>
+            <option value="37">Resource Boost</option>
+            <option value="62">Drop Boost</option>
+            <option value="63">Stat Drop Boost</option>
+        `
+
+        let templateCraftingQueue = `
+        <div class="row">
+            <div class="col-12">
+                <h4>Crafting Queue</h4>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <table width="100%">
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Item</th>
+                            <th>Skill</th>
+                            <th>TC</th>
+                            <th>Damage / Armor</th>
+                            <th>Crystal Boost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" class="form-control" id="crafting_queue_weapon_level" placeholder="Leave blank to omit" /></td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_weapon_type">
+                                    <option value="0">Sword</option>
+                                    <option value="1">Staff</option>
+                                    <option value="2">Bow</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_weapon_skill">
+                                    ${craftingQueueOptionsSkillsWeapon}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_weapon_tc">
+                                    ${craftingQueueOptionsTC}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_weapon_damage">
+                                    ${craftingQueueOptionsDamageWeapon}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_weapon_crystal">
+                                    ${craftingQueueOptionsCrystalBoosts}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="crafting_queue_helmet_level" placeholder="Leave blank to omit" /></td>
+                            <td>
+                                <input type="hidden" id="crafting_queue_helmet_type" value="50" />
+                                Helmet
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_helmet_skill">
+                                    ${craftingQueueOptionsSkillsArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_helmet_tc">
+                                    ${craftingQueueOptionsTC}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_helmet_damage">
+                                    ${craftingQueueOptionsDamageArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_helmet_crystal">
+                                    ${craftingQueueOptionsCrystalBoosts}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="crafting_queue_breast_level" placeholder="Leave blank to omit" /></td>
+                            <td>
+                                <input type="hidden" id="crafting_queue_breast_type" value="51" />
+                                Breastplate
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_breast_skill">
+                                    ${craftingQueueOptionsSkillsArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_breast_tc">
+                                    ${craftingQueueOptionsTC}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_breast_damage">
+                                    ${craftingQueueOptionsDamageArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_breast_crystal">
+                                    ${craftingQueueOptionsCrystalBoosts}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="crafting_queue_gloves_level" placeholder="Leave blank to omit" /></td>
+                            <td>
+                                <input type="hidden" id="crafting_queue_gloves_type" value="52" />
+                                Gloves
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_gloves_skill">
+                                    ${craftingQueueOptionsSkillsArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_gloves_tc">
+                                    ${craftingQueueOptionsTC}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_gloves_damage">
+                                    ${craftingQueueOptionsDamageArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_gloves_crystal">
+                                    ${craftingQueueOptionsCrystalBoosts}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="crafting_queue_boots_level" placeholder="Leave blank to omit" /></td>
+                            <td>
+                                <input type="hidden" id="crafting_queue_boots_type" value="53" />
+                                Boots
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_boots_skill">
+                                    ${craftingQueueOptionsSkillsArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_boots_tc">
+                                    ${craftingQueueOptionsTC}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_boots_damage">
+                                    ${craftingQueueOptionsDamageArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_boots_crystal">
+                                    ${craftingQueueOptionsCrystalBoosts}
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="text" class="form-control" id="crafting_queue_offhand_level" placeholder="Leave blank to omit" /></td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_offhand_type">
+                                    <option value="54">Shield</option>
+                                    <option value="55">Quiver</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_offhand_skill">
+                                    ${craftingQueueOptionsSkillsArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_offhand_tc">
+                                    ${craftingQueueOptionsTC}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_offhand_damage">
+                                    ${craftingQueueOptionsDamageArmor}
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-control" id="crafting_queue_offhand_crystal">
+                                    ${craftingQueueOptionsCrystalBoosts}
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-xs-3">
+                <button class="btn btn-success" id="crafting_queue_submit">Add To Queue</button>
+            </div>
+            <div class="col-xs-3">
+                <button class="btn btn-danger" id="crafting_queue_remove_all">Clear Queue</button>
+            </div>
+            <div class="col-xs-3">Save to Present button</div>
+            <div class="col-xs-3">Preset select list</div>
+        </div>
+        <br />
+        <div class="row">
+            <div class="col-12">
+                <table width="100%">
+                    <thead>
+                        <tr>
+                            <th>Level</th>
+                            <th>Item</th>
+                            <th>Skill</th>
+                            <th>TC</th>
+                            <th>Damage / Armor</th>
+                            <th>Crystal Boost</th>
+                            <th>Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="crafting_queue"></tbody>
                 </table>
             </div>
         </div>
@@ -3231,6 +3689,7 @@
                         <button class="btn btn-primary bot-menu-nav" data-target="bot-menu-settings">Settings</button>
                         <button class="btn btn-primary bot-menu-nav" data-target="bot-menu-overrides">Overrides</button>
                         <button class="btn btn-primary bot-menu-nav" data-target="bot-menu-spawn-gems">Spawn Gems</button>
+                        <button class="btn btn-primary bot-menu-nav" data-target="bot-menu-crafting-queue">Crafting Queue</button>
                         <button class="btn btn-primary bot-menu-nav" data-target="bot-menu-commands">Commands</button>
                         <button class="btn btn-primary bot-menu-nav" data-target="bot-menu-currency">Send Currency</button>
                         <button class="btn btn-primary bot-menu-nav" data-target="bot-menu-trainingcenter">Training Center</button>
@@ -3247,6 +3706,7 @@
                     <div id="bot-menu-settings" class="panes" style="display: none;">${templateSettings}</div>
                     <div id="bot-menu-overrides" class="panes" style="display: none;">${templateOverrides}</div>
                     <div id="bot-menu-spawn-gems" class="panes" style="display: none;">${templateSpawnGems}</div>
+                    <div id="bot-menu-crafting-queue" class="panes" style="display: none;">${templateCraftingQueue}</div>
                     <div id="bot-menu-commands" class="panes" style="display: none;">${templateCommands}</div>
                     <div id="bot-menu-currency" class="panes" style="display: none;">${templateCurrency}</div>
                     <div id="bot-menu-trainingcenter" class="panes" style="display: none;">${templateTrainingCenter}</div>
