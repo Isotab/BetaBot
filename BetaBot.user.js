@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.26
+// @version      1.2.27
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -1570,6 +1570,10 @@
                 </tr>`)
             })
 
+            if (rows.length > 0) {
+                $('#crafting_queue_add_now').show()
+            }
+
             $('#crafting_queue').html(rows.join(`\n`))
         }
     }
@@ -2664,9 +2668,12 @@
         })
 
         $(document).on('click', '#crafting_queue_remove_all', function(event) {
-
             crafting.queue = [];
             crafting.updateQueueDisplay();
+        })
+
+        $(document).on('click', '#crafting_queue_add_now', function(event) {
+            crafting.addFromQueue();
         })
 
         $(document).on('click', '#bot-chat-recheck', function(event) {
@@ -3457,8 +3464,13 @@
                 <button class="btn btn-success" id="crafting_queue_submit">Add To Queue</button>
             </div>
             <div class="col-xs-3">
+                <button class="btn btn-info" id="crafting_queue_add_now" style="display: none">Add to table now</button>
+            </div>
+            <div class="col-xs-3">
                 <button class="btn btn-danger" id="crafting_queue_remove_all">Clear Queue</button>
             </div>
+        </div>
+        <div class="row">
             <div class="col-xs-3">Save to Present button</div>
             <div class="col-xs-3">Preset select list</div>
         </div>

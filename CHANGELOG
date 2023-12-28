@@ -1,3 +1,6 @@
+### V1.2.27
+    * Added a "Add now" button to crafting queue, this will start adding them without you needing to start crafting first. This will not auto start crafting
+
 ### V1.2.26
     * Changed up clean up housing option, removed agility and quest boost, bumped up threshold for str, agi, and health
 
