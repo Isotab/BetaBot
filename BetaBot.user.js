@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Betabot
 // @namespace    audogfuolhfiajhf656+
-// @version      1.2.27
+// @version      1.2.28
 // @description  Avabur Beta Bot
 // @author       Batosi
 // @match        https://beta.avabur.com/game*
@@ -79,6 +79,7 @@
                 max_carving: '2000',
                 join_time: '15',
                 switch_to_battle: false,
+                minute_to_battle: '5'
             },
             trainingcenter: {
                 max_gold: '5000000000000',
@@ -2274,7 +2275,7 @@
             //     actions.changeEvent(newAction)
             // }
 
-            let minutesToBattle = vars.isAlt ? 2 : 3
+            let minutesToBattle = parseInt(settings.get('event.minute_to_battle'))
 
             let eventTimeLeft = data.results.p.event_end || null
             if (settings.get('event.switch_to_battle') && (eventTimeLeft !== null && eventTimeLeft <= (minutesToBattle * 60) && currentAction != 'battle')) {
@@ -2892,6 +2893,10 @@
                 <label class="switch">
                     <input type="checkbox" class="form-control bot-option" data-type="event" data-key="switch_to_battle"><span class="roundedslider"></span>
                 </label>
+            </div>
+            <div class="col-xs-3">Minute to switch to battle</div>
+            <div class="col-xs-3"> 
+                <input type="text" class="form-control bot-option" data-type="event" data-key="minute_to_battle" />
             </div>
         </div>
         `
